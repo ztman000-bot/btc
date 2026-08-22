@@ -57,7 +57,7 @@ def fetch(symbol,range_,interval):
 for symbol in SYMBOLS:
     try:
         j15=fetch(symbol,"5d","15m")
-        j1=fetch(symbol,"60d","1h")
+        j1=fetch(symbol,"180d","1h")
         jd=fetch(symbol,"2y","1d")
         jw=fetch(symbol,"10y","1wk")
         m15=rows(j15); h1=rows(j1); d1=rows(jd); w1=rows(jw); h4=aggregate(h1,4)
@@ -66,7 +66,7 @@ for symbol in SYMBOLS:
         prev=meta.get("chartPreviousClose") or meta.get("previousClose") or price
         change=((price/prev)-1)*100 if price and prev else 0
         payload={"symbol":symbol,"generatedAt":datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                 "price":price,"change":change,"m15":m15,"h1":h1,"h4":h4,"d1":d1,"w1":w1}
+                 "price":price,"change":change,"m15":m15,"h1":h1,"h4":h4,"d1":d1,"w1":w1,"source":"Yahoo Finance","schemaVersion":"7.5"}
         with open(os.path.join(OUT,symbol+".json"),"w",encoding="utf-8") as f:
             json.dump(payload,f,separators=(",",":"),ensure_ascii=False)
         print("OK",symbol)
