@@ -4,7 +4,7 @@ SYMBOLS = [
     "AAPL","NVDA","MSFT","TSLA","AMZN","GOOGL","META",
     "005930.KS","000660.KS","068270.KS","035420.KS","051910.KS"
 ]
-OUT = "btc/data/stocks"
+OUT = "data/stocks"
 os.makedirs(OUT, exist_ok=True)
 
 def get_json(url):
