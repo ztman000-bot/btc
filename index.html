@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#0b1118"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v6.3</title>
+<title>BTC Hedge Assistant v6.4</title>
 <style>
 :root{
   --bg:#0b1118;--panel:#111923;--panel2:#0d151f;--line:#27323f;--grid:#263241;
@@ -43,11 +43,23 @@ footer{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#0b1118f2;bo
 footer button{font-size:11px;padding:8px 3px}
 .crossTip{position:absolute;display:none;z-index:20;pointer-events:none;background:#0c131dcc;border:1px solid #354254;border-radius:8px;padding:6px 8px;font-size:11px;color:#dfe7f1;max-width:210px}
 .badge{padding:3px 7px;border-radius:999px;font-size:10px;border:1px solid var(--line)}
+
+.execBadge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;margin-right:4px;border:1px solid var(--line)}
+.execYES{background:#0e3326;color:#79e3b7;border-color:#286149}.execMAYBE{background:#332912;color:#ffd27f;border-color:#715625}.execNO{background:#38191f;color:#ff9faa;border-color:#74404a}
+.blockerWrap{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.blocker{font-size:10px;padding:4px 7px;border-radius:999px;background:#182331;border:1px solid #334155;color:#d3dbe6}
+.blocker.bad{background:#35191f;border-color:#6d3b45;color:#ffabb4}.blocker.warn{background:#332912;border-color:#6d5527;color:#ffd27f}
+.rowCurrent{background:#17253a!important;outline:1px solid #3b82f6}
+.collapsibleHeader{cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.distanceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+@media(max-width:760px){.distanceGrid{grid-template-columns:1fr 1fr}}
+.scenarioGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+@media(max-width:760px){.scenarioGrid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <header>
-  <div class="row"><div><h1>BTC Hedge Assistant v6.3</h1><div class="sub">Binance형 차트 · 실시간 현재가 · 크로스헤어 · 신뢰도 · 매매표 · 알림 · 백테스트</div></div><span id="liveState" class="pill">연결중</span></div>
+  <div class="row"><div><h1>BTC Hedge Assistant v6.4</h1><div class="sub">실시간 캔들 · 차단사유 · 포지션 로드맵 · 증거금 시나리오 · 알림 · 백테스트</div></div><span id="liveState" class="pill">연결중</span></div>
 </header>
 
 <main>
@@ -59,7 +71,7 @@ footer button{font-size:11px;padding:8px 3px}
       <div id="markLine" class="small">Mark -- · 실시간 대기</div>
     </div>
     <div class="card">
-      <div class="label">V6.3 전략 모드</div>
+      <div class="label">V6.4 전략 모드</div>
       <div id="mode" class="mid warn">--</div>
       <div id="modeHint" class="small">--</div>
       <div class="row" style="margin-top:8px"><span class="small">종합 신뢰도</span><b id="confidence">--%</b></div>
@@ -78,8 +90,21 @@ footer button{font-size:11px;padding:8px 3px}
       <div><div class="label">현재 판단</div><div id="grade" class="big">--</div><div id="action" class="mid warn">WAIT</div></div>
       <div><div class="label">가중치 분석</div><div id="tfConfidence" class="small"></div></div>
     </div>
+    <div class="row" style="margin-top:7px"><span class="label">실행 상태</span><span id="execState" class="execBadge execMAYBE">조건부</span></div>
+    <div id="blockers" class="blockerWrap"></div>
     <div id="actionReason" class="small" style="margin-top:7px;line-height:1.55"></div>
     <div id="riskGate"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><b>현재가 기준 거리</b><span class="badge">실시간</span></div>
+    <div id="distanceStats" class="distanceGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><b>추가 증거금 시나리오</b><span class="badge">+300 / +600 / +900</span></div>
+    <div id="marginScenarios" class="scenarioGrid"></div>
+    <div class="small" style="margin-top:6px">추정값은 참고치입니다. 실제 Binance 표시 청산가가 우선입니다.</div>
   </div>
 
   <div class="card">
@@ -100,7 +125,8 @@ footer button{font-size:11px;padding:8px 3px}
       <button onclick="zoomChart(-1)">축소 −</button>
       <button onclick="resetChartView()">초기화</button>
     </div>
-    <div class="chartWrap"><canvas id="chart"></canvas><div id="crossTip" class="crossTip"></div></div>
+    <div class="collapsibleHeader" onclick="toggleIndicatorPanels()"><span class="small">보조지표 패널</span><span id="panelToggleText" class="small">Volume · Stoch RSI · DMI 표시 중 ▼</span></div>
+    <div class="chartWrap" id="chartWrap"><canvas id="chart"></canvas><div id="crossTip" class="crossTip"></div></div>
     <div class="small" style="margin-top:6px">핀치 확대/축소 · 한 손가락 좌우 이동 · 터치/마우스로 OHLC/EMA/RSI 크로스헤어 · 현재가/평단/청산가/예정가격 표시</div>
   </div>
 
@@ -120,7 +146,7 @@ footer button{font-size:11px;padding:8px 3px}
   </div>
 
   <div id="trade" class="tabPane activePane card">
-    <div class="row"><b>V6.3 실전 매매표</b><span class="badge">현재가 ±8K</span></div>
+    <div class="row"><b>V6.4 실전 매매표</b><span class="badge">현재 구간 자동 강조</span></div><div class="small" style="margin:5px 0">가격별 예상 롱/숏 잔량·순노출·실행 상태·안전거리 로드맵</div>
     <div class="tableWrap"><table id="ladder"></table></div>
   </div>
 
@@ -152,6 +178,8 @@ footer button{font-size:11px;padding:8px 3px}
       <div class="field"><label>거래량 확인</label><select id="requireVol"><option value="0">선택</option><option value="1">필수</option></select></div>
       <div class="field"><label>예정 매수가/지지선</label><input id="planBuy" type="number" step="100"></div>
       <div class="field"><label>예정 매도가/저항선</label><input id="planSell" type="number" step="100"></div>
+      <div class="field"><label>백테스트 수수료율(편도 %)</label><input id="feeRate" type="number" step="0.001"></div>
+      <div class="field"><label>백테스트 펀딩비 추정(1회 %)</label><input id="fundingRate" type="number" step="0.001"></div>
     </div>
     <div class="card" style="margin-top:10px">
       <b>Binance형 지표 색</b>
@@ -190,9 +218,14 @@ footer button{font-size:11px;padding:8px 3px}
     <div class="row"><b>실행 기록</b><button onclick="clearLog()">초기화</button></div>
     <div id="logBody" class="small" style="line-height:1.5;margin-top:8px"></div>
     <button class="primary" style="margin-top:9px;width:100%" onclick="recordAction()">현재 판단을 실행했다고 기록</button>
+    <div class="stack" style="margin-top:8px">
+      <button onclick="exportAll()">설정/기록 내보내기</button>
+      <button onclick="$('importFile').click()">설정/기록 가져오기</button>
+      <input id="importFile" type="file" accept=".json" style="display:none" onchange="importAll(this)">
+    </div>
   </div>
 
-  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V6.3의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
+  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V6.4의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
 </main>
 
 <footer>
@@ -207,7 +240,7 @@ footer button{font-size:11px;padding:8px 3px}
 const $=id=>document.getElementById(id);
 let market={}, chartTF='4h', currentDecision={action:'WAIT',reason:'',qty:0,exec:false}, currentCrossIndex=null;
 let overlays={ema5:true,ma15:true,ema10:true,ema120:true,bb:true,st:true,cross:true};
-let liveWS=null,lastLiveTs=0,viewCount=100,viewOffset=0,dragStartX=null,dragStartOffset=0,pinchStartDist=null,pinchStartCount=null;
+let liveWS=null,klineWS=null,lastLiveTs=0,viewCount=100,viewOffset=0,dragStartX=null,dragStartOffset=0,pinchStartDist=null,pinchStartCount=null,showIndicatorPanels=true,lastDecisionSig='';
 let alertState={high:false,low:false,lastAction:''};
 
 function ema(a,n){let k=2/(n+1),r=[],v=a[0];for(let i=0;i<a.length;i++){v=i?a[i]*k+v*(1-k):a[i];r.push(v)}return r}
@@ -228,6 +261,70 @@ function enrich(k){
 function calc(k){let e=enrich(k),i=e.c.length-1,p=i-1;return{close:e.c[i],ema5:e.e5[i],ma15:e.m15[i],ema10:e.e10[i],ema120:e.e120[i],spread:e.e10[i]-e.e120[i],spreadPrev:e.e10[p]-e.e120[p],pdi:e.pdi[i],mdi:e.mdi[i],adx:e.adx[i],adxPrev:e.adx[p],stDir:e.stDir[i],st:e.st[i],stochK:e.stochK[i],stochD:e.stochD[i],rsi:e.rsi[i],volRatio:e.volRatio[i]}}
 async function J(u){let r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 
+
+function pctDist(a,b){if(!a||!b)return null;return (a-b)/b*100}
+function fmtSigned(v,n=1){return (v>=0?'+':'')+v.toFixed(n)+'%'}
+function currentArrayName(){return chartTF==='15m'?'m15':chartTF==='1h'?'h1':chartTF==='1d'?'d1':'h4'}
+function syncCurrentKline(k){
+  let key=currentArrayName(),arr=market[key];if(!arr||!arr.length)return;
+  let row=[k.t,String(k.o),String(k.h),String(k.l),String(k.c),String(k.v),k.T,String(k.q||0),k.n||0,String(k.V||0),String(k.Q||0),'0'];
+  let last=arr[arr.length-1];
+  if(+last[0]===+k.t)arr[arr.length-1]=row;else if(+k.t>+last[0])arr.push(row);
+  if(arr.length>500)arr.splice(0,arr.length-500);
+  let ind=calc(arr);
+  if(key==='m15')market.i15=ind;else if(key==='h1')market.i1=ind;else if(key==='h4')market.i4=ind;else market.id=ind;
+  if(key==='h4'||key==='h1'||key==='d1'){renderTF();decide()}
+  drawChart()
+}
+function connectKline(){
+  try{if(klineWS)klineWS.close()}catch(e){}
+  let interval=chartTF;
+  klineWS=new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@kline_${interval}`);
+  klineWS.onmessage=e=>{try{let x=JSON.parse(e.data);if(x.k)syncCurrentKline(x.k)}catch(err){}};
+  klineWS.onclose=()=>setTimeout(()=>{if(interval===chartTF)connectKline()},2500)
+}
+function updateDistanceStats(){
+  if(!market.price)return;let d=pos(),p=market.price;
+  let vals=[
+    ['롱 평단까지',pctDist(p,d.le),'롱 $'+Math.round(d.le).toLocaleString()],
+    ['숏 평단까지',pctDist(p,d.se),'숏 $'+Math.round(d.se).toLocaleString()],
+    ['청산가까지',d.liq?Math.abs(p-d.liq)/p*100:null,'청산가 $'+Math.round(d.liq).toLocaleString()]
+  ];
+  $('distanceStats').innerHTML=vals.map(([t,v,s])=>`<div class=kpi><div class=label>${t}</div><div class="mid ${v!=null&&Math.abs(v)<10?'warn':''}">${v==null?'--':(t==='청산가까지'?Math.abs(v).toFixed(1)+'%':fmtSigned(v))}</div><div class=tiny>${s}</div></div>`).join('')
+}
+function mmrApproxBase(d){
+  if(!d.liq||(!d.lq&&!d.sq))return 0;
+  let P=d.liq,eq=d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P),notion=(d.lq+d.sq)*P;
+  return notion?eq/notion:0
+}
+function approxLiqWithAdded(extra){
+  let d=pos(),m=mmrApproxBase(d),n={...d,added:d.added+extra};
+  let den=(n.lq-n.sq)-m*(n.lq+n.sq),num=n.wallet+n.added-n.lq*n.le+n.sq*n.se;
+  return Math.abs(den)<1e-9?NaN:-num/den
+}
+function renderMarginScenarios(){
+  if(!market.price)return;let d=pos(),extras=[0,300,600,900],remaining=reserveLeft(d);
+  $('marginScenarios').innerHTML=extras.map(extra=>{
+    let allowed=Math.min(extra,remaining),liq=approxLiqWithAdded(allowed),dist=isFinite(liq)?Math.abs(market.price-liq)/market.price*100:null;
+    return `<div class=kpi><div class=label>${extra?('+'+extra+' USDT'):'현재'}</div><div class=mid>${isFinite(liq)?'$'+Math.round(liq).toLocaleString():'--'}</div><div class=tiny>안전거리 ${dist==null?'--':dist.toFixed(1)+'%'}</div></div>`
+  }).join('')
+}
+function toggleIndicatorPanels(){
+  showIndicatorPanels=!showIndicatorPanels;
+  $('panelToggleText').textContent=showIndicatorPanels?'Volume · Stoch RSI · DMI 표시 중 ▼':'보조지표 접힘 ▲';
+  $('chartWrap').style.height=showIndicatorPanels?'610px':'390px';drawChart()
+}
+function blockerHTML(items){return items.map(x=>`<span class="blocker ${x.sev||''}">${x.text}</span>`).join('')}
+function exportAll(){
+  let payload={version:'6.4',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v64log')||'[]')};
+  let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v64_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+}
+function importAll(inp){
+  let f=inp.files&&inp.files[0];if(!f)return;let r=new FileReader();
+  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v64pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v64log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
+}
+
 function connectLive(){
   try{if(liveWS)liveWS.close()}catch(e){}
   $('liveState').textContent='연결중';
@@ -240,7 +337,7 @@ function connectLive(){
     $('chg').textContent=(market.change>=0?'+':'')+market.change.toFixed(2)+'%';
     $('chg').className='mid '+(market.change>=0?'good':'bad');
     $('markLine').textContent='Mark '+px.toLocaleString(undefined,{maximumFractionDigits:1})+' · '+new Date(lastLiveTs).toLocaleTimeString();
-    if(market.i4){updatePosStats();decide();drawChart();checkAlerts()}
+    if(market.i4){updatePosStats();updateDistanceStats();renderMarginScenarios();decide();drawChart();checkAlerts()}
   };
   liveWS.onerror=()=>{$('liveState').textContent='REST';$('liveState').className='pill warn'};
   liveWS.onclose=()=>{setTimeout(connectLive,2500)}
@@ -259,7 +356,7 @@ async function refreshAll(){
     market={...market,price:lastLiveTs?market.price:+t.lastPrice,change:+t.priceChangePercent,m15,h1,h4,d1,i15:calc(m15),i1:calc(h1),i4:calc(h4),id:calc(d1)};
     $('price').textContent='$'+market.price.toLocaleString(undefined,{maximumFractionDigits:1});
     $('chg').textContent=(market.change>=0?'+':'')+market.change.toFixed(2)+'%';
-    renderTF();decide();updatePosStats();drawChart();buildLadder();renderLog()
+    renderTF();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();drawChart();buildLadder();renderLog()
   }catch(e){$('actionReason').textContent='Binance 공개 API 연결 실패: '+e.message}
 }
 
@@ -278,64 +375,82 @@ function weightedConfidence(){
 }
 function liqDistancePct(d){return(!d.liq||!market.price)?999:Math.abs(d.liq-market.price)/market.price*100}
 function reserveLeft(d){return Math.max(0,2000-d.added)}
-function cooldownActive(){let log=JSON.parse(localStorage.getItem('v63log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
+function cooldownActive(){let log=JSON.parse(localStorage.getItem('v64log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
 
 function decide(){
   if(!market.i4)return;
-  let d=pos(),p=market.price,s4=directionalScore(market.i4),wc=weightedConfidence(),safe=liqDistancePct(d),mode='평단 사이',grade='C',act='관망',reason='롱·숏 평단 사이에서는 왕복매매 최소화',qty=0,exec=false;
+  let d=pos(),p=market.price,s4=directionalScore(market.i4),wc=weightedConfidence(),safe=liqDistancePct(d);
+  let mode='평단 사이',grade='C',act='관망',reason='롱·숏 평단 사이에서는 왕복매매 최소화',qty=0,exec=false,execState='조건부',blockers=[];
   let volOK=!d.requireVol||market.i4.volRatio>=1;
+  if(!volOK)blockers.push({text:'거래량 부족',sev:'warn'});
+  if(p>d.se&&p<d.le)blockers.push({text:'평단 사이',sev:'warn'});
+  if(market.i4.rsi>=70)blockers.push({text:'4H RSI 과열 '+market.i4.rsi.toFixed(0),sev:'warn'});
+  if(market.i4.rsi<=30)blockers.push({text:'4H RSI 과매도 '+market.i4.rsi.toFixed(0),sev:'warn'});
 
-  if(safe<d.hardSafe){mode='위험관리';grade='RISK';act=reserveLeft(d)>0?'증거금 +300 또는 노출 축소':'노출 축소 우선';reason=`청산가 거리 ${safe.toFixed(1)}% < 긴급 ${d.hardSafe.toFixed(1)}%`;exec=true}
-  else if(safe<d.minSafe){mode='안전거리 부족';grade='SAFE';act='일반 매매 보류';reason=`청산가 거리 ${safe.toFixed(1)}% < 권장 ${d.minSafe.toFixed(1)}%`}
-  else if(cooldownActive()){mode='쿨다운';grade='WAIT';act='관망';reason=`최근 실행 후 ${d.coolHours}시간 이내 연속매매 억제`}
-  else if(p>d.le){
+  if(safe<d.hardSafe){
+    mode='위험관리';grade='RISK';act=reserveLeft(d)>0?'증거금 +300 또는 노출 축소':'노출 축소 우선';reason=`청산가 거리 ${safe.toFixed(1)}% < 긴급 ${d.hardSafe.toFixed(1)}%`;exec=true;execState='실행가능';blockers=[{text:'긴급 안전거리 미달',sev:'bad'}]
+  }else if(safe<d.minSafe){
+    mode='안전거리 부족';grade='SAFE';act='일반 매매 금지';reason=`청산가 거리 ${safe.toFixed(1)}% < 권장 ${d.minSafe.toFixed(1)}%`;execState='금지';blockers.push({text:'안전거리 미달',sev:'bad'})
+  }else if(cooldownActive()){
+    mode='쿨다운';grade='WAIT';act='관망';reason=`최근 실행 후 ${d.coolHours}시간 이내 연속매매 억제`;execState='금지';blockers.push({text:`쿨다운 ${d.coolHours}h`,sev:'bad'})
+  }else if(p>d.le){
     mode='상승 수익관리';let lp=(p/d.le-1)*100;
+    if(s4.bull<6)blockers.push({text:`4H 상승 ${s4.bull}/8`,sev:'warn'});
+    if(wc.bull<55)blockers.push({text:`종합상승 ${Math.round(wc.bull)}%`,sev:'warn'});
+    if(market.i4.rsi<55)blockers.push({text:`RSI ${market.i4.rsi.toFixed(0)}<55`,sev:'warn'});
+    if(lp<d.longTP)blockers.push({text:`롱수익 ${lp.toFixed(1)}%<${d.longTP}%`,sev:'warn'});
     if(s4.bull>=6&&wc.bull>=55&&market.i4.rsi>=55&&lp>=d.longTP&&volOK){
       qty=Math.min(d.stepQty,d.lq);let proj=(d.lq-qty)-d.sq;
-      if(Math.abs(proj)<=d.maxNet){grade='A↑';act=`롱 ${qty.toFixed(2)} 익절 검토`;exec=true;reason=`4H 상승 ${s4.bull}/8 · 종합상승 ${Math.round(wc.bull)}% · RSI ${market.i4.rsi.toFixed(0)} · 롱수익 ${lp.toFixed(1)}%`}
-      else{grade='B';act='롱 익절 보류';reason=`익절 후 순노출 ${proj.toFixed(2)} BTC 허용치 초과`}
-    }else{grade='B↑';act='롱 유지';reason=`평단 위지만 실행 확인 부족 · 4H ${s4.bull}/8 · 종합 ${Math.round(wc.bull)}% · RSI ${market.i4.rsi.toFixed(0)}`}
+      if(Math.abs(proj)<=d.maxNet){grade='A↑';act=`롱 ${qty.toFixed(2)} 익절 검토`;exec=true;execState='실행가능';reason=`4H 상승 ${s4.bull}/8 · 종합상승 ${Math.round(wc.bull)}% · RSI ${market.i4.rsi.toFixed(0)} · 롱수익 ${lp.toFixed(1)}%`;blockers=[]}
+      else{grade='B';act='롱 익절 보류';execState='금지';reason=`익절 후 순노출 ${proj.toFixed(2)} BTC 허용치 초과`;blockers=[{text:'순노출 제한',sev:'bad'}]}
+    }else{grade='B↑';act='롱 유지';reason='평단 위지만 실행 확인 부족';execState='조건부'}
   }else if(p<d.se){
     mode='하락 회복관리';let sp=(d.se/p-1)*100;
+    if(s4.bear<6)blockers.push({text:`4H 하락 ${s4.bear}/8`,sev:'warn'});
+    if(wc.bear<55)blockers.push({text:`종합하락 ${Math.round(wc.bear)}%`,sev:'warn'});
+    if(market.i4.rsi>45)blockers.push({text:`RSI ${market.i4.rsi.toFixed(0)}>45`,sev:'warn'});
+    if(sp<d.shortTP)blockers.push({text:`숏수익 ${sp.toFixed(1)}%<${d.shortTP}%`,sev:'warn'});
     if(s4.bear>=6&&wc.bear>=55&&market.i4.rsi<=45&&sp>=d.shortTP&&volOK){
       qty=Math.min(d.stepQty,d.sq);let proj=d.lq-(d.sq-qty);
-      if(Math.abs(proj)<=d.maxNet){grade='A↓';act=`숏 ${qty.toFixed(2)} 정리 검토`;exec=true;reason=`4H 하락 ${s4.bear}/8 · 종합하락 ${Math.round(wc.bear)}% · RSI ${market.i4.rsi.toFixed(0)} · 숏수익 ${sp.toFixed(1)}%`}
-      else{grade='B';act='숏 정리 보류';reason=`정리 후 순노출 ${proj.toFixed(2)} BTC 허용치 초과`}
-    }else{grade='B↓';act='숏 유지';reason=`숏 수익구간이나 실행 확인 부족 · 4H ${s4.bear}/8 · 종합 ${Math.round(wc.bear)}% · RSI ${market.i4.rsi.toFixed(0)}`}
+      if(Math.abs(proj)<=d.maxNet){grade='A↓';act=`숏 ${qty.toFixed(2)} 정리 검토`;exec=true;execState='실행가능';reason=`4H 하락 ${s4.bear}/8 · 종합하락 ${Math.round(wc.bear)}% · RSI ${market.i4.rsi.toFixed(0)} · 숏수익 ${sp.toFixed(1)}%`;blockers=[]}
+      else{grade='B';act='숏 정리 보류';execState='금지';reason=`정리 후 순노출 ${proj.toFixed(2)} BTC 허용치 초과`;blockers=[{text:'순노출 제한',sev:'bad'}]}
+    }else{grade='B↓';act='숏 유지';reason='숏 수익구간이나 실행 확인 부족';execState='조건부'}
   }
-  currentDecision={action:act,reason,qty,exec,grade,mode};
+
+  currentDecision={action:act,reason,qty,exec,grade,mode,execState,blockers};
   $('mode').textContent=mode;$('modeHint').textContent=`롱 $${Math.round(d.le).toLocaleString()} · 숏 $${Math.round(d.se).toLocaleString()}`;
   $('grade').textContent=grade;$('grade').className='big '+(grade.includes('↑')?'good':grade.includes('↓')||grade==='RISK'?'bad':'warn');
-  $('action').textContent=act;$('actionReason').textContent=reason;
-  $('scoreText').textContent=`4H 상승 ${s4.bull}/8 · 하락 ${s4.bear}/8`;
+  $('action').textContent=act;$('actionReason').textContent=reason;$('scoreText').textContent=`4H 상승 ${s4.bull}/8 · 하락 ${s4.bear}/8`;
   $('confidence').textContent=wc.confidence+'%';$('tfConfidence').innerHTML=wc.rows.join('<br>');
   $('safeDist').textContent=safe.toFixed(1)+'%';$('safeDist').className='mid '+(safe>=d.minSafe?'good':safe>=d.hardSafe?'warn':'bad');
-  $('safeText').textContent=`권장 ${d.minSafe.toFixed(1)}% · 긴급 ${d.hardSafe.toFixed(1)}%`;
-  $('reserve').textContent='$'+reserveLeft(d).toLocaleString();
+  $('safeText').textContent=`권장 ${d.minSafe.toFixed(1)}% · 긴급 ${d.hardSafe.toFixed(1)}%`;$('reserve').textContent='$'+reserveLeft(d).toLocaleString();
+  $('execState').textContent=execState;$('execState').className='execBadge '+(execState==='실행가능'?'execYES':execState==='금지'?'execNO':'execMAYBE');
+  $('blockers').innerHTML=blockers.length?blockerHTML(blockers):'<span class="blocker">차단요인 없음</span>';
   let cls=safe>=d.minSafe?'okbox':safe>=d.hardSafe?'warnbox':'notice';
   $('riskGate').innerHTML=`<div class="${cls}">청산가 안전거리 ${safe.toFixed(1)}% · 순노출 ${(d.lq-d.sq).toFixed(3)} BTC · Margin Ratio ${d.mr.toFixed(2)}%</div>`;
-  if(alertState.lastAction&&alertState.lastAction!==act&&act!=='관망')notify('BTC Hedge v6.3 전략 변경',act+' · '+reason);
-  alertState.lastAction=act;
+  let sig=act+'|'+execState;if(lastDecisionSig&&lastDecisionSig!==sig&&act!=='관망')notify('BTC Hedge v6.4 전략 변경',act+' · '+execState+' · '+reason);lastDecisionSig=sig;alertState.lastAction=act;
 }
-
-function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0}}
-function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v63pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
-function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
-function savePos(){localStorage.setItem('v63pos',JSON.stringify(pos()));decide();updatePosStats();buildLadder();drawChart();alert('V6.3 설정 저장 완료')}
+function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0,feeRate:0.04,fundingRate:0.01}}
+function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v64pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
+function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
+function savePos(){localStorage.setItem('v64pos',JSON.stringify(pos()));decide();updatePosStats();buildLadder();drawChart();alert('V6.4 설정 저장 완료')}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
 function updatePosStats(){if(!market.price)return;let d=pos(),eq=eqAt(market.price,d),net=d.lq-d.sq,safe=liqDistancePct(d);$('posStats').innerHTML=`<div class=kpi><div class=label>순노출</div><div class=mid>${net.toFixed(3)} BTC</div></div><div class=kpi><div class=label>Equity 추정</div><div class=mid>$${Math.round(eq).toLocaleString()}</div></div><div class=kpi><div class=label>청산가 거리</div><div class=mid>${safe.toFixed(1)}%</div></div><div class=kpi><div class=label>비상증거금</div><div class=mid>$${reserveLeft(d).toLocaleString()}</div></div>`}
 
 function buildLadder(){
-  if(!market.price)return;let d=pos(),base=Math.round(market.price/1000)*1000,rows=[];
-  for(let x=-8;x<=8;x++){let P=base+x*1000,lp=(P/d.le-1)*100,sp=(d.se/P-1)*100,act='관망',note='평단 사이/추세 확인',priority='보통';
-    if(P>d.le&&lp>=d.longTP){act=`롱 ${Math.min(d.stepQty,d.lq).toFixed(2)} 익절 후보`;note='4H 상승≥6/8 + 종합상승≥55%';priority='높음'}
-    else if(P<d.se&&sp>=d.shortTP){act=`숏 ${Math.min(d.stepQty,d.sq).toFixed(2)} 정리 후보`;note='4H 하락≥6/8 + 종합하락≥55%';priority='높음'}
-    rows.push(`<tr><td>$${P.toLocaleString()}</td><td>${act}</td><td>${lp.toFixed(1)}%</td><td>${sp.toFixed(1)}%</td><td>${priority}</td><td>${note}</td></tr>`)}
-  $('ladder').innerHTML='<tr><th>구간</th><th>권장 행동</th><th>롱%</th><th>숏%</th><th>우선</th><th>확인조건</th></tr>'+rows.join('')
+  if(!market.price)return;let d=pos(),base=Math.round(market.price/1000)*1000,rows=[],cur=base;
+  for(let x=-8;x<=8;x++){
+    let P=base+x*1000,lp=(P/d.le-1)*100,sp=(d.se/P-1)*100,act='관망',status='조건부',note='평단 사이/추세 확인',lAfter=d.lq,sAfter=d.sq;
+    if(P>d.le&&lp>=d.longTP){let q=Math.min(d.stepQty,d.lq);act=`롱 ${q.toFixed(2)} 익절 후보`;lAfter=Math.max(0,d.lq-q);note='4H 상승≥6/8 · 종합상승≥55%'}
+    else if(P<d.se&&sp>=d.shortTP){let q=Math.min(d.stepQty,d.sq);act=`숏 ${q.toFixed(2)} 정리 후보`;sAfter=Math.max(0,d.sq-q);note='4H 하락≥6/8 · 종합하락≥55%'}
+    let net=lAfter-sAfter;if(Math.abs(net)>d.maxNet){status='금지';note='예상 순노출 제한 초과'}
+    let safeEst=d.liq?Math.abs(P-d.liq)/P*100:null,cls=P===cur?' class="rowCurrent"':'';
+    rows.push(`<tr${cls}><td>$${P.toLocaleString()}</td><td>${act}</td><td>${status}</td><td>${lAfter.toFixed(2)}</td><td>${sAfter.toFixed(2)}</td><td>${net.toFixed(2)}</td><td>${safeEst==null?'--':safeEst.toFixed(1)+'%'}</td><td>${note}</td></tr>`)
+  }
+  $('ladder').innerHTML='<tr><th>가격</th><th>권장 행동</th><th>상태</th><th>롱잔량</th><th>숏잔량</th><th>순노출</th><th>안전거리</th><th>조건</th></tr>'+rows.join('')
 }
-
 function chartData(){return chartTF==='15m'?market.m15:chartTF==='1h'?market.h1:chartTF==='1d'?market.d1:market.h4}
-function setTF(tf){chartTF=tf;['15m','1h','4h','1d'].forEach(x=>$('b'+x).className=x===tf?'active':'');viewCount=100;viewOffset=0;drawChart()}
+function setTF(tf){chartTF=tf;['15m','1h','4h','1d'].forEach(x=>$('b'+x).className=x===tf?'active':'');viewCount=100;viewOffset=0;connectKline();drawChart()}
 function toggleOverlay(k){overlays[k]=!overlays[k];drawChart()}
 function zoomChart(dir){let data=chartData();if(!data)return;viewCount=Math.max(30,Math.min(data.length,Math.round(viewCount*(dir>0?.8:1.25))));viewOffset=Math.max(0,Math.min(data.length-viewCount,viewOffset));drawChart()}
 function resetChartView(){viewCount=100;viewOffset=0;drawChart()}
@@ -345,7 +460,7 @@ function drawChart(){
   let canvas=$('chart'),wrap=canvas.parentElement,dpr=devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;
   let ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   let all=chartData(),end=Math.max(viewCount,all.length-viewOffset),start=Math.max(0,end-viewCount),k=all.slice(start,end),e=enrich(k),n=k.length;
-  let padL=8,padR=64,priceTop=15,priceBottom=Math.floor(H*.58),volTop=Math.floor(H*.59),volBottom=Math.floor(H*.69),stTop=Math.floor(H*.71),stBottom=Math.floor(H*.84),dmiTop=Math.floor(H*.86),dmiBottom=H-18;
+  let padL=8,padR=64,priceTop=15,priceBottom=showIndicatorPanels?Math.floor(H*.58):H-20,volTop=Math.floor(H*.59),volBottom=Math.floor(H*.69),stTop=Math.floor(H*.71),stBottom=Math.floor(H*.84),dmiTop=Math.floor(H*.86),dmiBottom=H-18;
   let pMin=Math.min(...e.l),pMax=Math.max(...e.h),pRange=pMax-pMin||1,cw=(W-padL-padR)/n,X=i=>padL+i*cw+cw/2,Y=v=>priceTop+(pMax-v)/pRange*(priceBottom-priceTop);
   ctx.strokeStyle='#233040';ctx.lineWidth=1;for(let j=0;j<=4;j++){let y=priceTop+j*(priceBottom-priceTop)/4;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
   for(let i=0;i<n;i++){let up=e.c[i]>=e.o[i],col=up?'#0ECB81':'#F6465D';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(X(i),Y(e.h[i]));ctx.lineTo(X(i),Y(e.l[i]));ctx.stroke();let y1=Y(Math.max(e.o[i],e.c[i])),y2=Y(Math.min(e.o[i],e.c[i]));ctx.fillRect(X(i)-Math.max(1,cw*.28),y1,Math.max(2,cw*.56),Math.max(1,y2-y1))}
@@ -354,6 +469,7 @@ function drawChart(){
   if(overlays.bb){line(e.bbU,'#7b52d9',1);line(e.bbL,'#7b52d9',1)}
   if(overlays.st)line(e.st,'#15b8a6',1.5);
   if(overlays.cross){for(let i=1;i<n;i++){let a=e.e10[i-1]-e.e120[i-1],b=e.e10[i]-e.e120[i];if((a<=0&&b>0)||(a>=0&&b<0)){let yy=b>0?Y(e.l[i])-6:Y(e.h[i])+6;ctx.strokeStyle=b>0?'#F0B90B':'#ff8c00';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X(i)-4,yy-4);ctx.lineTo(X(i)+4,yy+4);ctx.moveTo(X(i)+4,yy-4);ctx.lineTo(X(i)-4,yy+4);ctx.stroke()}}}
+  if(showIndicatorPanels){
   let vmax=Math.max(...e.v)||1;for(let i=0;i<n;i++){let vh=(e.v[i]/vmax)*(volBottom-volTop),col=e.c[i]>=e.o[i]?'#0ECB8166':'#F6465D66';ctx.fillStyle=col;ctx.fillRect(X(i)-cw*.3,volBottom-vh,Math.max(1,cw*.6),vh)}
   ctx.fillStyle='#9aa6b2';ctx.font='10px system-ui';ctx.fillText('Volume',8,volTop+11);
 
@@ -362,6 +478,7 @@ function drawChart(){
 
   let maxD=Math.max(50,...e.pdi,...e.mdi,...e.adx),DY=v=>dmiBottom-(v/maxD)*(dmiBottom-dmiTop);line(e.pdi,'#2196f3',1.3,DY);line(e.mdi,'#ff2c55',1.3,DY);line(e.adx,'#f0a52b',1.3,DY);ctx.fillStyle='#9aa6b2';ctx.fillText('DMI / ADX',8,dmiTop+10);
 
+  }
   function hline(v,col,label,dash=[5,4]){if(!v||v<pMin||v>pMax)return;let y=Y(v);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.font='10px system-ui';ctx.fillText(label,W-padR-58,y-3)}
   let d=pos();hline(d.le,'#0ECB81','LONG AVG');hline(d.se,'#F6465D','SHORT AVG');hline(d.liq,'#eaecef','LIQ',[2,4]);hline(d.planBuy,'#f0b90b','PLAN BUY',[8,4]);hline(d.planSell,'#ff8c00','PLAN SELL',[8,4]);
 
@@ -383,26 +500,31 @@ function distTouches(t){let dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].cl
 
 function enableNotifications(){if(!('Notification'in window)){alert('이 브라우저는 알림을 지원하지 않습니다');return}Notification.requestPermission().then(x=>alert('알림 권한: '+x))}
 function notify(title,body){if('Notification'in window&&Notification.permission==='granted'){try{new Notification(title,{body,icon:'icon-192.png'})}catch(e){}}}
-function testNotification(){notify('BTC Hedge v6.3','알림 테스트입니다.')}
+function testNotification(){notify('BTC Hedge v6.4','알림 테스트입니다.')}
 function checkAlerts(){let d=pos(),p=market.price;if(d.alertHigh>0&&p>=d.alertHigh&&!alertState.high){notify('BTC 상단 가격 도달',`현재가 $${p.toFixed(1)} ≥ $${d.alertHigh}`);alertState.high=true}else if(p<d.alertHigh)alertState.high=false;if(d.alertLow>0&&p<=d.alertLow&&!alertState.low){notify('BTC 하단 가격 도달',`현재가 $${p.toFixed(1)} ≤ $${d.alertLow}`);alertState.low=true}else if(p>d.alertLow)alertState.low=false}
 
 function runBacktest(){
-  let data=chartData(),d=pos(),events=[],longQ=d.lq,shortQ=d.sq,realized=0,cool=0;
-  for(let i=130;i<data.length;i++){let sub=data.slice(0,i+1),ind=calc(sub),p=+data[i][4];if(cool>0){cool--;continue}let s=directionalScore(ind);
-    if(p>d.le&&(p/d.le-1)*100>=d.longTP&&s.bull>=6&&longQ>0){let q=Math.min(d.stepQty,longQ),pl=(p-d.le)*q;longQ-=q;realized+=pl;events.push([new Date(+data[i][0]).toLocaleDateString(),p,'LONG_TP',q,pl,realized]);cool=2}
-    else if(p<d.se&&(d.se/p-1)*100>=d.shortTP&&s.bear>=6&&shortQ>0){let q=Math.min(d.stepQty,shortQ),pl=(d.se-p)*q;shortQ-=q;realized+=pl;events.push([new Date(+data[i][0]).toLocaleDateString(),p,'SHORT_TP',q,pl,realized]);cool=2}
+  let data=chartData(),d=pos(),events=[],longQ=d.lq,shortQ=d.sq,realized=0,cool=0,wins=0,peak=0,maxDD=0;
+  for(let i=130;i<data.length;i++){
+    let sub=data.slice(0,i+1),ind=calc(sub),p=+data[i][4];if(cool>0){cool--;continue}let s=directionalScore(ind),trade=null;
+    if(p>d.le&&(p/d.le-1)*100>=d.longTP&&s.bull>=6&&longQ>0){
+      let q=Math.min(d.stepQty,longQ),gross=(p-d.le)*q,fee=(p*q+d.le*q)*(d.feeRate/100),fund=(p*q)*(d.fundingRate/100),net=gross-fee-fund;longQ-=q;trade=['LONG_TP',q,gross,fee,fund,net];cool=2
+    }else if(p<d.se&&(d.se/p-1)*100>=d.shortTP&&s.bear>=6&&shortQ>0){
+      let q=Math.min(d.stepQty,shortQ),gross=(d.se-p)*q,fee=(p*q+d.se*q)*(d.feeRate/100),fund=(p*q)*(d.fundingRate/100),net=gross-fee-fund;shortQ-=q;trade=['SHORT_TP',q,gross,fee,fund,net];cool=2
+    }
+    if(trade){realized+=trade[5];peak=Math.max(peak,realized);maxDD=Math.max(maxDD,peak-realized);if(trade[5]>=0)wins++;events.push([new Date(+data[i][0]).toLocaleDateString(),p,...trade,realized])}
   }
-  $('btSummary').innerHTML=`<div class=kpi><div class=label>액션</div><div class=mid>${events.length}</div></div><div class=kpi><div class=label>롱 익절</div><div class=mid>${events.filter(x=>x[2]=='LONG_TP').length}</div></div><div class=kpi><div class=label>숏 정리</div><div class=mid>${events.filter(x=>x[2]=='SHORT_TP').length}</div></div><div class=kpi><div class=label>단순 실현PnL</div><div class=mid>$${Math.round(realized).toLocaleString()}</div></div>`;
-  $('btTable').innerHTML='<tr><th>날짜</th><th>가격</th><th>액션</th><th>수량</th><th>PNL</th><th>누적</th></tr>'+events.slice(-30).reverse().map(x=>`<tr><td>${x[0]}</td><td>$${Math.round(x[1]).toLocaleString()}</td><td>${x[2]}</td><td>${x[3].toFixed(2)}</td><td>${x[4].toFixed(0)}</td><td>${x[5].toFixed(0)}</td></tr>`).join('')
+  let winRate=events.length?wins/events.length*100:0;
+  $('btSummary').innerHTML=`<div class=kpi><div class=label>액션</div><div class=mid>${events.length}</div></div><div class=kpi><div class=label>승률</div><div class=mid>${winRate.toFixed(1)}%</div></div><div class=kpi><div class=label>순실현PnL</div><div class=mid>$${Math.round(realized).toLocaleString()}</div></div><div class=kpi><div class=label>최대 MDD</div><div class=mid>$${Math.round(maxDD).toLocaleString()}</div></div>`;
+  $('btTable').innerHTML='<tr><th>날짜</th><th>가격</th><th>액션</th><th>수량</th><th>Gross</th><th>수수료</th><th>펀딩</th><th>Net</th><th>누적</th></tr>'+events.slice(-30).reverse().map(x=>`<tr><td>${x[0]}</td><td>$${Math.round(x[1]).toLocaleString()}</td><td>${x[2]}</td><td>${x[3].toFixed(2)}</td><td>${x[4].toFixed(0)}</td><td>${x[5].toFixed(0)}</td><td>${x[6].toFixed(0)}</td><td>${x[7].toFixed(0)}</td><td>${x[8].toFixed(0)}</td></tr>`).join('')
 }
-
-function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v63log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty});localStorage.setItem('v63log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
-function clearLog(){localStorage.removeItem('v63log');renderLog();decide()}
-function renderLog(){let log=JSON.parse(localStorage.getItem('v63log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
+function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v64log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v64log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
+function clearLog(){localStorage.removeItem('v64log');renderLog();decide()}
+function renderLog(){let log=JSON.parse(localStorage.getItem('v64log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
 
 function openTab(id,btn){document.querySelectorAll('.tabPane').forEach(x=>x.classList.remove('activePane'));document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));$(id).classList.add('activePane');if(btn)btn.classList.add('active');window.scrollTo({top:document.querySelector('.tabs').offsetTop-65,behavior:'smooth'})}
 
-['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow'].forEach(id=>$(id).addEventListener('change',()=>{if(market.price){updatePosStats();decide();buildLadder();drawChart()}}));
+['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(id=>$(id).addEventListener('change',()=>{if(market.price){updatePosStats();updateDistanceStats();renderMarginScenarios();decide();buildLadder();drawChart()}}));
 
 (function bindGestures(){
   let c=$('chart');
@@ -417,7 +539,7 @@ function openTab(id,btn){document.querySelectorAll('.tabPane').forEach(x=>x.clas
 })();
 window.addEventListener('resize',drawChart);
 
-loadPos();renderLog();connectLive();refreshAll();setInterval(refreshAll,60000);setInterval(liveWatchdog,5000);
+loadPos();renderLog();connectLive();connectKline();refreshAll();setInterval(refreshAll,60000);setInterval(liveWatchdog,5000);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script>
 </body>
