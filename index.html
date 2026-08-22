@@ -3,301 +3,120 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#0b1220"/>
+<meta name="theme-color" content="#07111f"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v3</title>
+<title>BTC Hedge Assistant v5</title>
 <style>
-:root{
- --bg:#07101d;--card:#0d1727;--card2:#101d30;--line:#26364d;
- --text:#f4f7fb;--muted:#9aabc2;--blue:#2f6fed;--green:#13b981;
- --red:#ef5a5a;--amber:#f0a52b;--cyan:#22c3ee
-}
-*{box-sizing:border-box}
-body{margin:0;background:linear-gradient(180deg,#06101b,#09111e 35%,#07101a);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{position:sticky;top:0;z-index:20;background:#08111eee;backdrop-filter:blur(12px);padding:14px 16px;border-bottom:1px solid #1e2c3f}
-header h1{font-size:19px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
-main{max-width:900px;margin:auto;padding:12px 12px 96px}
-.card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 12px 28px #0004}
-.grid2,.grid3{display:grid;gap:10px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:650px){.grid3{grid-template-columns:1fr}}
-.label{font-size:12px;color:var(--muted)}.big{font-size:28px;font-weight:800}.mid{font-size:19px;font-weight:750}
-.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}.muted{color:var(--muted)}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:750}
-.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.stack{display:flex;gap:8px;flex-wrap:wrap}
-.meter{height:10px;background:#172438;border-radius:999px;overflow:hidden}.meter>div{height:100%;border-radius:999px;background:linear-gradient(90deg,#2f6fed,#22c3ee)}
-button,input,select{width:100%;padding:11px;border-radius:11px;border:1px solid var(--line);background:#0a1423;color:var(--text);font-size:15px}
-button{background:#1b2b42;font-weight:800;cursor:pointer}button.primary{background:#2f6fed}button.green{background:#0c8b68}
-.field{margin-top:8px}.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 5px;border-bottom:1px solid #22324a;text-align:right}th:first-child,td:first-child{text-align:left}
-.kpi{padding:10px;border:1px solid var(--line);border-radius:12px;background:#0b1626}
-.action{font-size:22px;font-weight:900;margin-top:4px}.reason{font-size:13px;line-height:1.55;color:#c9d6e6}
-canvas{width:100%;height:220px;background:#08111d;border-radius:12px}
-footer{position:fixed;left:0;right:0;bottom:0;background:#09121eee;border-top:1px solid #22324a;padding:10px 12px;display:flex;gap:10px;z-index:30}
-footer button{margin:0}.dangerbox{background:#271217;border:1px solid #63303a;border-radius:12px;padding:10px;font-size:12px;line-height:1.5}
+:root{--bg:#06101c;--card:#0d1727;--line:#26364d;--text:#f4f7fb;--muted:#9aabc2;--blue:#2f6fed;--green:#13b981;--red:#ef5a5a;--amber:#f0a52b;--violet:#8b5cf6}
+*{box-sizing:border-box}body{margin:0;background:#06101c;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:30;background:#08111eee;backdrop-filter:blur(10px);padding:13px 15px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.sub,.label{font-size:12px;color:var(--muted)}main{max-width:980px;margin:auto;padding:12px 12px 94px}
+.card{background:linear-gradient(180deg,#101d30,#0d1727);border:1px solid var(--line);border-radius:17px;padding:13px;margin-bottom:11px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}@media(max-width:700px){.grid3{grid-template-columns:1fr}}
+.big{font-size:27px;font-weight:850}.mid{font-size:18px;font-weight:800}.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}.violet{color:var(--violet)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:7px}.stack{display:flex;gap:7px;flex-wrap:wrap}.pill{padding:6px 9px;border:1px solid var(--line);border-radius:999px;font-size:12px}
+button,input,select{width:100%;border:1px solid var(--line);border-radius:10px;background:#0a1423;color:var(--text);padding:10px;font-size:14px}button{font-weight:800;background:#1b2b42}button.primary{background:#2f6fed}
+.field{margin-top:8px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}.reason{font-size:13px;line-height:1.5;color:#c9d6e6}
+.chartWrap{position:relative;height:430px;background:#08111d;border:1px solid #203049;border-radius:13px;overflow:hidden}
+#priceChart{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.chartToolbar{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.chartToolbar button{width:auto;padding:7px 10px;font-size:12px}.active{background:#2f6fed!important}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:7px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.kpi{background:#0a1423;border:1px solid var(--line);border-radius:11px;padding:9px}.meter{height:9px;background:#172438;border-radius:99px;overflow:hidden}.meter div{height:100%}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:7px;border-bottom:1px solid #22324a;text-align:right}td:first-child,th:first-child{text-align:left}
+footer{position:fixed;bottom:0;left:0;right:0;background:#09121eee;border-top:1px solid var(--line);display:flex;gap:8px;padding:9px 12px;z-index:40}
+.notice{font-size:12px;line-height:1.45;background:#26141a;border:1px solid #65313d;border-radius:11px;padding:9px}
 </style>
 </head>
 <body>
-<header>
-  <h1>BTC Hedge Assistant v3</h1>
-  <div class="sub">자동 지표 계산 · 다중 시간봉 점수 · 헷지 해제 의사결정</div>
-</header>
-
+<header><h1>BTC Hedge Assistant v5</h1><div class="sub">캔들 차트 · EMA/MA/SuperTrend 오버레이 · 양방향 헷지 전략</div></header>
 <main>
-  <div class="grid2">
-    <div class="card">
-      <div class="label">BTCUSDT</div>
-      <div id="price" class="big">--</div>
-      <div id="chg" class="label">24h --</div>
-    </div>
-    <div class="card">
-      <div class="label">현재 판단</div>
-      <div id="grade" class="big">--</div>
-      <div id="verdict" class="mid">분석 중</div>
-    </div>
-  </div>
+<div class="grid2">
+ <div class="card"><div class="label">BTCUSDT</div><div id="price" class="big">--</div><div id="chg" class="label">24h --</div></div>
+ <div class="card"><div class="label">전략 모드</div><div id="mode" class="mid warn">--</div><div id="modeHint" class="label">분석 중</div></div>
+</div>
 
-  <div class="card">
-    <div class="row"><b>지금 해야 할 행동</b><span id="riskPill" class="pill">위험도 --</span></div>
-    <div id="action" class="action warn">WAIT</div>
-    <div id="actionReason" class="reason">시장 데이터를 불러오는 중입니다.</div>
-  </div>
+<div class="card">
+ <div class="row"><b>현재 판단</b><span id="scoreText" class="pill">--</span></div>
+ <div id="grade" class="big">--</div><div id="action" class="mid warn">WAIT</div><div id="actionReason" class="reason"></div>
+</div>
 
-  <div class="card">
-    <div class="row"><b>신호 점수</b><span id="scoreText" class="pill">--</span></div>
-    <div class="field">
-      <div class="label">상승 점수</div>
-      <div class="meter"><div id="bullMeter" style="width:0%"></div></div>
-    </div>
-    <div class="field">
-      <div class="label">하락 점수</div>
-      <div class="meter"><div id="bearMeter" style="width:0%;background:linear-gradient(90deg,#ef5a5a,#f0a52b)"></div></div>
-    </div>
-  </div>
+<div class="card">
+ <div class="row"><b>BTC 차트</b><span id="chartPrice" class="pill">--</span></div>
+ <div class="chartToolbar">
+  <button id="b1h" onclick="setTF('1h')">1H</button><button id="b4h" class="active" onclick="setTF('4h')">4H</button><button id="b1d" onclick="setTF('1d')">1D</button>
+  <button onclick="toggleOverlay('ema5')">EMA5</button><button onclick="toggleOverlay('ma15')">MA15</button>
+  <button onclick="toggleOverlay('ema10')">EMA10</button><button onclick="toggleOverlay('ema120')">EMA120</button>
+  <button onclick="toggleOverlay('st')">SuperTrend</button>
+ </div>
+ <div class="chartWrap"><canvas id="priceChart"></canvas></div>
+ <div class="legend">
+  <span><i class="dot" style="background:#2f6fed"></i>EMA5</span>
+  <span><i class="dot" style="background:#f0a52b"></i>MA15</span>
+  <span><i class="dot" style="background:#22c3ee"></i>EMA10</span>
+  <span><i class="dot" style="background:#8b5cf6"></i>EMA120</span>
+  <span><i class="dot" style="background:#13b981"></i>SuperTrend</span>
+ </div>
+</div>
 
-  <div class="card">
-    <div class="row"><b>4시간 가격 흐름</b><span class="label">최근 120봉</span></div>
-    <canvas id="chart" width="820" height="260"></canvas>
-  </div>
+<div class="grid3">
+ <div class="card"><b>1H</b><div id="tf1h" class="reason"></div></div>
+ <div class="card"><b>4H 핵심</b><div id="tf4h" class="reason"></div></div>
+ <div class="card"><b>1D</b><div id="tf1d" class="reason"></div></div>
+</div>
 
-  <div class="grid3">
-    <div class="card"><b>1H</b><div id="tf1h" class="reason"></div></div>
-    <div class="card"><b>4H 핵심</b><div id="tf4h" class="reason"></div></div>
-    <div class="card"><b>1D 방향</b><div id="tf1d" class="reason"></div></div>
-  </div>
+<div class="card"><b>현재 포지션</b>
+ <div class="grid2">
+  <div class="field"><label>롱 수량</label><input id="lq" type="number" step=".001"></div><div class="field"><label>롱 평단</label><input id="le" type="number" step=".01"></div>
+  <div class="field"><label>숏 수량</label><input id="sq" type="number" step=".001"></div><div class="field"><label>숏 평단</label><input id="se" type="number" step=".01"></div>
+  <div class="field"><label>Wallet Balance</label><input id="wallet" type="number" step=".01"></div><div class="field"><label>실제 청산가</label><input id="liq" type="number" step=".01"></div>
+  <div class="field"><label>Margin Ratio %</label><input id="mr" type="number" step=".01"></div><div class="field"><label>추가 증거금 누적</label><input id="added" type="number" step="100" max="2000"></div>
+ </div><div id="posStats" class="grid2" style="margin-top:9px"></div>
+</div>
 
-  <div class="card">
-    <b>현재 포지션</b>
-    <div class="grid2">
-      <div class="field"><label>롱 수량 BTC</label><input id="lq" type="number" step="0.001"></div>
-      <div class="field"><label>롱 평단</label><input id="le" type="number" step="0.01"></div>
-      <div class="field"><label>숏 수량 BTC</label><input id="sq" type="number" step="0.001"></div>
-      <div class="field"><label>숏 평단</label><input id="se" type="number" step="0.01"></div>
-      <div class="field"><label>Wallet Balance</label><input id="wallet" type="number" step="0.01"></div>
-      <div class="field"><label>Binance 실제 청산가</label><input id="liq" type="number" step="0.01"></div>
-      <div class="field"><label>Margin Ratio %</label><input id="mr" type="number" step="0.01"></div>
-      <div class="field"><label>누적 추가증거금</label><input id="added" type="number" step="100" min="0" max="2000"></div>
-    </div>
-    <div id="posStats" class="grid2" style="margin-top:10px"></div>
-  </div>
+<div class="card"><b>양방향 시뮬레이터</b>
+ <div class="grid2"><div class="field"><label>롱 정리 BTC</label><input id="closeLong" value="0" type="number" step=".01"></div><div class="field"><label>숏 정리 BTC</label><input id="closeShort" value=".2" type="number" step=".01"></div></div>
+ <div class="field"><label>추가 증거금 USDT</label><select id="addMargin"><option>0</option><option>300</option><option>600</option><option>900</option><option>1200</option><option>1500</option><option>1800</option><option>2000</option></select></div>
+ <div class="stack" style="margin-top:8px"><button onclick="quickSim(0,.1,0)">숏 .1</button><button onclick="quickSim(0,.2,0)">숏 .2</button><button onclick="quickSim(.1,0,0)">롱 .1</button><button onclick="quickSim(.2,0,0)">롱 .2</button></div>
+ <div id="sim" style="margin-top:9px"></div>
+</div>
 
-  <div class="card">
-    <b>시뮬레이터</b>
-    <div class="grid2">
-      <div class="field"><label>숏 정리수량 BTC</label><input id="closeShort" type="number" value="0.20" step="0.01"></div>
-      <div class="field"><label>추가 증거금 USDT</label>
-        <select id="addMargin"><option>0</option><option>300</option><option>600</option><option>900</option><option>1200</option><option>1500</option><option>1800</option><option>2000</option></select>
-      </div>
-    </div>
-    <div class="stack" style="margin-top:8px">
-      <button onclick="quickSim(.1,0)">숏 0.1</button>
-      <button onclick="quickSim(.2,0)">숏 0.2</button>
-      <button onclick="quickSim(.3,0)">숏 0.3</button>
-      <button class="green" onclick="quickSim(.2,300)">숏0.2 + $300</button>
-    </div>
-    <div id="sim" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <b>핵심 가격 레벨</b>
-    <div id="levels" class="stack" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <b>판단 로직</b>
-    <table>
-      <tr><th>등급</th><th>실행 원칙</th></tr>
-      <tr><td>A 상승</td><td>80K+ 4H 종가 돌파 + SuperTrend 상승 + EMA 정렬 + +DI 우위 + ADX 상승</td></tr>
-      <tr><td>B 상승</td><td>상승 우세지만 가격 확인 부족 → 대기 또는 매우 소량 축소</td></tr>
-      <tr><td>C</td><td>혼조 → 헷지 유지</td></tr>
-      <tr><td>B 하락</td><td>하락 우세 → 숏 유지</td></tr>
-      <tr><td>A 하락</td><td>75K↓ + 하락 정렬 → 숏 유지/하락 방어 우선</td></tr>
-    </table>
-  </div>
-
-  <div class="dangerbox">
-    자동 주문 기능은 없습니다. 포지션 일부 정리 후에는 Binance가 새로 계산한 실제 청산가와 Margin Ratio를 반드시 다시 입력하세요.
-    브라우저 계산 청산가는 계획용 추정치입니다.
-  </div>
+<div class="notice">차트는 Binance 공개 시세를 기반으로 앱 내부에서 직접 그립니다. 자동 주문은 하지 않습니다. 포지션 변경 후에는 Binance 실제 청산가와 Margin Ratio를 다시 입력하세요.</div>
 </main>
-
-<footer>
-  <button class="primary" onclick="refreshAll()">새로고침</button>
-  <button onclick="savePos()">설정 저장</button>
-</footer>
+<footer><button class="primary" onclick="refreshAll()">새로고침</button><button onclick="savePos()">설정 저장</button></footer>
 
 <script>
-const $=id=>document.getElementById(id);
-const LEVELS=[68000,70000,72000,75000,80000,82000,85000,90000];
-let market={};
-
+const $=id=>document.getElementById(id); let market={}, chartTF='4h';
+let overlays={ema5:true,ma15:true,ema10:false,ema120:true,st:true};
 function ema(a,n){let k=2/(n+1),r=[],v=a[0];for(let i=0;i<a.length;i++){v=i?a[i]*k+v*(1-k):a[i];r.push(v)}return r}
 function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
 function atr(h,l,c,n=14){let tr=c.map((_,i)=>i?Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])):h[i]-l[i]);return ema(tr,n)}
-function dmi(h,l,c,n=14){
- let pdm=[0],mdm=[0],tr=[h[0]-l[0]];
- for(let i=1;i<c.length;i++){let up=h[i]-h[i-1],dn=l[i-1]-l[i];pdm.push(up>dn&&up>0?up:0);mdm.push(dn>up&&dn>0?dn:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}
- let ae=ema(tr,n),pe=ema(pdm,n),me=ema(mdm,n),p=[],m=[],dx=[];
- for(let i=0;i<c.length;i++){let pv=ae[i]?100*pe[i]/ae[i]:0,mv=ae[i]?100*me[i]/ae[i]:0;p.push(pv);m.push(mv);dx.push(pv+mv?100*Math.abs(pv-mv)/(pv+mv):0)}
- return {pdi:p,mdi:m,adx:ema(dx,n)}
-}
-function supertrend(h,l,c,n=10,f=3){
- let a=atr(h,l,c,n),up=[],lo=[],st=[],dir=[];
- for(let i=0;i<c.length;i++){
-   let mid=(h[i]+l[i])/2,bu=mid+f*a[i],bl=mid-f*a[i];
-   if(i===0){up.push(bu);lo.push(bl);st.push(bu);dir.push(-1);continue}
-   up.push((bu<up[i-1]||c[i-1]>up[i-1])?bu:up[i-1]);
-   lo.push((bl>lo[i-1]||c[i-1]<lo[i-1])?bl:lo[i-1]);
-   let cur=st[i-1]===up[i-1]?(c[i]<=up[i]?up[i]:lo[i]):(c[i]>=lo[i]?lo[i]:up[i]);
-   st.push(cur);dir.push(cur===lo[i]?1:-1);
- }
- return {st,dir}
-}
-function stochRsi(c,n=14){
- let d=c.map((x,i)=>i?x-c[i-1]:0),g=d.map(x=>Math.max(x,0)),ls=d.map(x=>Math.max(-x,0));
- let ag=ema(g,n),al=ema(ls,n),rsi=ag.map((x,i)=>al[i]===0?100:100-100/(1+x/al[i]));
- return rsi.map((x,i)=>{if(i<n-1)return null;let w=rsi.slice(i-n+1,i+1),mn=Math.min(...w),mx=Math.max(...w);return mx===mn?50:(x-mn)/(mx-mn)*100})
-}
-function calc(k){
- let h=k.map(x=>+x[2]),l=k.map(x=>+x[3]),c=k.map(x=>+x[4]),i=c.length-1,p=i-1;
- let e5=ema(c,5),m15=sma(c,15),e10=ema(c,10),e120=ema(c,120),dm=dmi(h,l,c,14),su=supertrend(h,l,c,10,3),sr=stochRsi(c,14);
- return {close:c[i],ema5:e5[i],ma15:m15[i],ema10:e10[i],ema120:e120[i],
- spread:e10[i]-e120[i],spreadPrev:e10[p]-e120[p],pdi:dm.pdi[i],mdi:dm.mdi[i],adx:dm.adx[i],adxPrev:dm.adx[p],
- stDir:su.dir[i],st:su.st[i],stoch:sr[i]}
-}
-async function j(url){let r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error(r.status);return r.json()}
-async function refreshAll(){
- $("verdict").textContent="갱신 중";
- try{
-  let [t,h1,h4,d1]=await Promise.all([
-    j("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"),
-    j("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=180"),
-    j("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=4h&limit=180"),
-    j("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=180")
-  ]);
-  market={price:+t.lastPrice,change:+t.priceChangePercent,h1,h4,d1,i1:calc(h1),i4:calc(h4),id:calc(d1)};
-  $("price").textContent="$"+market.price.toLocaleString(undefined,{maximumFractionDigits:0});
-  $("chg").textContent=`24h ${market.change>=0?"+":""}${market.change.toFixed(2)}%`;
-  $("chg").className="label "+(market.change>=0?"good":"bad");
-  renderTF();renderLevels();score();drawChart();updatePosStats();checkLocalAlert();
- }catch(e){
-  $("verdict").textContent="시세 연결 실패";
-  $("actionReason").textContent="Binance 공개 API 연결을 확인하세요.";
-  console.error(e)
- }
-}
-function tfHtml(i){
- let st=i.stDir>0?"상승":"하락";
- return `SuperTrend: <b class="${st==="상승"?"good":"bad"}">${st}</b><br>
- EMA5/MA15: <b>${i.ema5>i.ma15?"상승":"하락"} 정렬</b><br>
- EMA10/120: <b>${i.ema10>i.ema120?"상승":"하락"}</b><br>
- +DI ${i.pdi.toFixed(1)} / -DI ${i.mdi.toFixed(1)}<br>
- ADX ${i.adx.toFixed(1)} ${i.adx>i.adxPrev?"↑":"↓"}<br>
- Stoch RSI ${i.stoch==null?"--":i.stoch.toFixed(1)}`
-}
-function renderTF(){$("tf1h").innerHTML=tfHtml(market.i1);$("tf4h").innerHTML=tfHtml(market.i4);$("tf1d").innerHTML=tfHtml(market.id)}
-function renderLevels(){
- $("levels").innerHTML=LEVELS.map(x=>`<span class="pill ${market.price>=x?"good":"muted"}">${(x/1000)}K</span>`).join("")
-}
-function score(){
- let i=market.i4,d=market.id,p=market.price;
- let bullChecks=[
-   i.stDir>0,i.ema5>i.ma15,i.ema10>i.ema120,i.spread>i.spreadPrev,i.pdi>i.mdi,i.adx>=20&&i.adx>i.adxPrev,d.stDir>0,d.ema10>d.ema120
- ];
- let bearChecks=[
-   i.stDir<0,i.ema5<i.ma15,i.ema10<i.ema120,i.spread<i.spreadPrev,i.mdi>i.pdi,i.adx>=20&&i.adx>i.adxPrev,d.stDir<0,d.ema10<d.ema120
- ];
- let bull=bullChecks.filter(Boolean).length,bear=bearChecks.filter(Boolean).length;
- $("bullMeter").style.width=(bull/8*100)+"%";$("bearMeter").style.width=(bear/8*100)+"%";
- $("scoreText").textContent=`상승 ${bull}/8 · 하락 ${bear}/8`;
- let grade="C",ver="혼조",action="WAIT",reason="헷지 유지 우선";
- if(p>=80000 && bull>=6){grade="A↑";ver="강한 상승 확인";action="숏 단계 축소 검토";reason="80K 상단 + 4H/1D 추세 필터가 다수 일치합니다."}
- else if(p<75000 && bear>=6){grade="A↓";ver="강한 하락 확인";action="숏 유지";reason="75K 이탈과 4H 하락 정렬이 겹쳤습니다."}
- else if(bull>=5){grade="B↑";ver="상승 우세";action="WAIT";reason="상승 조건은 우세하지만 핵심 가격 확인이 부족합니다."}
- else if(bear>=5){grade="B↓";ver="하락 우세";action="숏 유지";reason="하락 조건이 우세합니다. 숏 축소는 보류합니다."}
- $("grade").textContent=grade;$("grade").className="big "+(grade.includes("↑")?"good":grade.includes("↓")?"bad":"warn");
- $("verdict").textContent=ver;$("action").textContent=action;$("action").className="action "+(action.includes("축소")?"good":action.includes("숏 유지")?"bad":"warn");
- $("actionReason").textContent=reason;
-}
-function loadPos(){
- let d=JSON.parse(localStorage.getItem("btcHedgeV3")||"null")||{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0};
- Object.keys(d).forEach(k=>$(k).value=d[k])
-}
-function savePos(){
- let d={};["lq","le","sq","se","wallet","liq","mr","added"].forEach(k=>d[k]=+$(k).value);
- localStorage.setItem("btcHedgeV3",JSON.stringify(d));updatePosStats();alert("저장했습니다.")
-}
-function pos(){let d={};["lq","le","sq","se","wallet","liq","mr","added"].forEach(k=>d[k]=+$(k).value);return d}
+function dmi(h,l,c,n=14){let pd=[0],md=[0],tr=[h[0]-l[0]];for(let i=1;i<c.length;i++){let u=h[i]-h[i-1],d=l[i-1]-l[i];pd.push(u>d&&u>0?u:0);md.push(d>u&&d>0?d:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}let ae=ema(tr,n),pe=ema(pd,n),me=ema(md,n),p=[],m=[],dx=[];for(let i=0;i<c.length;i++){let pv=ae[i]?100*pe[i]/ae[i]:0,mv=ae[i]?100*me[i]/ae[i]:0;p.push(pv);m.push(mv);dx.push(pv+mv?100*Math.abs(pv-mv)/(pv+mv):0)}return{pdi:p,mdi:m,adx:ema(dx,n)}}
+function supertrend(h,l,c,n=10,f=3){let a=atr(h,l,c,n),up=[],lo=[],st=[],dir=[];for(let i=0;i<c.length;i++){let mid=(h[i]+l[i])/2,bu=mid+f*a[i],bl=mid-f*a[i];if(i===0){up.push(bu);lo.push(bl);st.push(bu);dir.push(-1);continue}up.push((bu<up[i-1]||c[i-1]>up[i-1])?bu:up[i-1]);lo.push((bl>lo[i-1]||c[i-1]<lo[i-1])?bl:lo[i-1]);let cur=st[i-1]===up[i-1]?(c[i]<=up[i]?up[i]:lo[i]):(c[i]>=lo[i]?lo[i]:up[i]);st.push(cur);dir.push(cur===lo[i]?1:-1)}return{st,dir}}
+function stochRsi(c,n=14){let d=c.map((x,i)=>i?x-c[i-1]:0),g=d.map(x=>Math.max(x,0)),ls=d.map(x=>Math.max(-x,0)),ag=ema(g,n),al=ema(ls,n),rsi=ag.map((x,i)=>al[i]===0?100:100-100/(1+x/al[i]));return rsi.map((x,i)=>{if(i<n-1)return null;let w=rsi.slice(i-n+1,i+1),mn=Math.min(...w),mx=Math.max(...w);return mx===mn?50:(x-mn)/(mx-mn)*100})}
+function calc(k){let h=k.map(x=>+x[2]),l=k.map(x=>+x[3]),c=k.map(x=>+x[4]),i=c.length-1,p=i-1,e5=ema(c,5),m15=sma(c,15),e10=ema(c,10),e120=ema(c,120),dm=dmi(h,l,c),su=supertrend(h,l,c),sr=stochRsi(c);return{close:c[i],ema5:e5[i],ma15:m15[i],ema10:e10[i],ema120:e120[i],spread:e10[i]-e120[i],spreadPrev:e10[p]-e120[p],pdi:dm.pdi[i],mdi:dm.mdi[i],adx:dm.adx[i],adxPrev:dm.adx[p],stDir:su.dir[i],st:su.st[i],stoch:sr[i]}}
+async function J(u){let r=await fetch(u,{cache:'no-store'});if(!r.ok)throw 0;return r.json()}
+async function refreshAll(){try{let [t,h1,h4,d1]=await Promise.all([J('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),J('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=220'),J('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=4h&limit=220'),J('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=220')]);market={price:+t.lastPrice,change:+t.priceChangePercent,h1,h4,d1,i1:calc(h1),i4:calc(h4),id:calc(d1)};$('price').textContent='$'+market.price.toLocaleString(undefined,{maximumFractionDigits:0});$('chg').textContent='24h '+(market.change>=0?'+':'')+market.change.toFixed(2)+'%';$('chg').className='label '+(market.change>=0?'good':'bad');renderTF();decide();updatePosStats();drawCandles()}catch(e){$('actionReason').textContent='Binance 공개 API 연결 실패'}}
+function tfHtml(i){return `SuperTrend <b class="${i.stDir>0?'good':'bad'}">${i.stDir>0?'상승':'하락'}</b><br>EMA5/MA15 ${i.ema5>i.ma15?'상승':'하락'}<br>EMA10/120 ${i.ema10>i.ema120?'상승':'하락'}<br>+DI ${i.pdi.toFixed(1)} / -DI ${i.mdi.toFixed(1)}<br>ADX ${i.adx.toFixed(1)} ${i.adx>i.adxPrev?'↑':'↓'}<br>Stoch RSI ${i.stoch==null?'--':i.stoch.toFixed(1)}`}
+function renderTF(){$('tf1h').innerHTML=tfHtml(market.i1);$('tf4h').innerHTML=tfHtml(market.i4);$('tf1d').innerHTML=tfHtml(market.id)}
+function scores(){let i=market.i4,d=market.id,b=[i.stDir>0,i.ema5>i.ma15,i.ema10>i.ema120,i.spread>i.spreadPrev,i.pdi>i.mdi,i.adx>=20&&i.adx>i.adxPrev,d.stDir>0,d.ema10>d.ema120].filter(Boolean).length,s=[i.stDir<0,i.ema5<i.ma15,i.ema10<i.ema120,i.spread<i.spreadPrev,i.mdi>i.pdi,i.adx>=20&&i.adx>i.adxPrev,d.stDir<0,d.ema10<d.ema120].filter(Boolean).length;return{bull:b,bear:s}}
+function decide(){let d=pos(),p=market.price,s=scores(),buf=d.le*.02,mode='전환',grade='C',act='WAIT',reason='혼조';if(p<d.le-buf){mode='회복';if(s.bull>=7){grade='A↑';act='숏 단계 축소 검토';reason='롱 평단 아래 강한 상승 전환'}else if(s.bear>=6){grade='B↓';act='숏 유지';reason='하락 우세'}}else if(p>d.le+buf){if(s.bear>=7){mode='수익보호';grade='A↓';act='롱 0.1~0.2 익절 검토';reason='평단 위 강한 하락 전환'}else{mode='상승수익';if(s.bull>=7){grade='A↑';act='숏 축소 우선';reason='강한 상승 지속'}else if(s.bull>=5){grade='B↑';act='롱 유지';reason='상승 우세'}}}else{mode='전환';if(s.bear>=7){grade='B↓';act='롱 일부 익절 후보';reason='평단 부근 하락 전환'}}$('mode').textContent=mode;$('modeHint').textContent=`롱 평단 $${d.le.toLocaleString(undefined,{maximumFractionDigits:0})} 기준`;$('grade').textContent=grade;$('grade').className='big '+(grade.includes('↑')?'good':grade.includes('↓')?'bad':'warn');$('action').textContent=act;$('actionReason').textContent=reason;$('scoreText').textContent=`상승 ${s.bull}/8 · 하락 ${s.bear}/8`}
+function loadPos(){let d=JSON.parse(localStorage.getItem('v5pos')||'null')||{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0};Object.keys(d).forEach(k=>$(k).value=d[k])}
+function savePos(){let d=pos();localStorage.setItem('v5pos',JSON.stringify(d));updatePosStats();alert('저장했습니다')}
+function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added'].forEach(k=>d[k]=+$(k).value);return d}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
-function updatePosStats(){
- if(!market.price)return;let d=pos(),eq=eqAt(market.price,d),net=d.lq-d.sq,dist=Math.abs(d.liq-market.price);
- $("posStats").innerHTML=`
- <div class="kpi"><div class="label">순포지션</div><div class="mid">${net.toFixed(3)} BTC</div></div>
- <div class="kpi"><div class="label">예상 Equity</div><div class="mid">$${eq.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div>
- <div class="kpi"><div class="label">청산가 거리</div><div class="mid">$${dist.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div>
- <div class="kpi"><div class="label">Margin Ratio</div><div class="mid">${d.mr.toFixed(2)}%</div></div>`;
- let rp=$("riskPill");let risk=d.mr>=70?"매우 높음":d.mr>=50?"높음":d.mr>=30?"주의":"보통";rp.textContent="위험도 "+risk;rp.className="pill "+(d.mr>=50?"bad":d.mr>=30?"warn":"good")
-}
-function mmrCal(base){
- let P=base.liq,eq=base.wallet+base.added+base.lq*(P-base.le)+base.sq*(base.se-P);
- return eq/((base.lq+base.sq)*P)
-}
-function approxLiq(nd,base){
- if(nd.lq+nd.sq<1e-10)return NaN;
- let m=mmrCal(base),den=(nd.lq-nd.sq)-m*(nd.lq+nd.sq),num=nd.wallet+nd.added-nd.lq*nd.le+nd.sq*nd.se;
- return Math.abs(den)<1e-10?NaN:-num/den
-}
-function simulate(){
- if(!market.price)return;let d=pos(),q=Math.min(+$("closeShort").value,d.sq),add=+$("addMargin").value;
- let pnl=q*(d.se-market.price),nd={...d,sq:d.sq-q,wallet:d.wallet+pnl,added:d.added+add},eq=eqAt(market.price,nd),lp=approxLiq(nd,d),gap=isFinite(lp)?Math.abs(market.price-lp):NaN;
- $("sim").innerHTML=`<table>
- <tr><td>실현손익</td><td class="${pnl>=0?"good":"bad"}">$${pnl.toFixed(2)}</td></tr>
- <tr><td>남은 숏</td><td>${nd.sq.toFixed(3)} BTC</td></tr>
- <tr><td>순포지션</td><td>${(nd.lq-nd.sq).toFixed(3)} BTC</td></tr>
- <tr><td>Wallet</td><td>$${nd.wallet.toFixed(2)}</td></tr>
- <tr><td>Equity</td><td>$${eq.toFixed(2)}</td></tr>
- <tr><td>추정 청산가</td><td>${isFinite(lp)?"$"+lp.toFixed(0):"--"}</td></tr>
- <tr><td>청산가 거리</td><td>${isFinite(gap)?"$"+gap.toFixed(0):"--"}</td></tr>
- </table>`
-}
-function quickSim(q,a){$("closeShort").value=q;$("addMargin").value=a;simulate()}
-function drawChart(){
- let c=$("chart"),ctx=c.getContext("2d"),k=market.h4.slice(-120),cl=k.map(x=>+x[4]),hi=k.map(x=>+x[2]),lo=k.map(x=>+x[3]),mn=Math.min(...lo),mx=Math.max(...hi),w=c.width,h=c.height,p=14;
- ctx.clearRect(0,0,w,h);ctx.strokeStyle="#22324a";ctx.lineWidth=1;for(let j=1;j<5;j++){let yy=j*h/5;ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(w,yy);ctx.stroke()}
- let X=i=>p+i*(w-2*p)/(cl.length-1),Y=v=>h-p-(v-mn)/(mx-mn)*(h-2*p);
- ctx.strokeStyle="#4f86ff";ctx.lineWidth=2;ctx.beginPath();cl.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));ctx.stroke()
-}
-let alerted={};
-function localNotify(title,body){if(Notification.permission==="granted")new Notification(title,{body})}
-function checkLocalAlert(){
- if(!market.price)return;let p=market.price,i=market.i4,events=[];
- if(p>=80000)events.push(["80K 돌파","4H 추세 확인 후 숏 축소 여부를 검토하세요."]);
- if(p<75000)events.push(["75K 이탈","숏 축소 중단, 방어 우선 구간입니다."]);
- if(i.stDir<0 && i.mdi>i.pdi && i.adx>=20 && i.adx>i.adxPrev)events.push(["4H 하락 정렬","SuperTrend/DMI/ADX가 하락 우세입니다."]);
- for(let [t,b] of events){if(!alerted[t]||Date.now()-alerted[t]>3600000){localNotify(t,b);alerted[t]=Date.now()}}
-}
-loadPos();refreshAll();setInterval(refreshAll,60000);
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
-if("Notification" in window && Notification.permission==="default")setTimeout(()=>Notification.requestPermission(),2500);
+function updatePosStats(){if(!market.price)return;let d=pos(),eq=eqAt(market.price,d),net=d.lq-d.sq;$('posStats').innerHTML=`<div class=kpi><div class=label>순포지션</div><div class=mid>${net.toFixed(3)} BTC</div></div><div class=kpi><div class=label>Equity</div><div class=mid>$${eq.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div><div class=kpi><div class=label>청산가 거리</div><div class=mid>$${Math.abs(d.liq-market.price).toLocaleString(undefined,{maximumFractionDigits:0})}</div></div><div class=kpi><div class=label>Margin Ratio</div><div class=mid>${d.mr.toFixed(2)}%</div></div>`}
+function mmrCal(b){let P=b.liq,eq=b.wallet+b.added+b.lq*(P-b.le)+b.sq*(b.se-P);return eq/((b.lq+b.sq)*P)}
+function approxLiq(n,b){if(n.lq+n.sq<1e-9)return NaN;let m=mmrCal(b),den=(n.lq-n.sq)-m*(n.lq+n.sq),num=n.wallet+n.added-n.lq*n.le+n.sq*n.se;return Math.abs(den)<1e-9?NaN:-num/den}
+function simulate(){if(!market.price)return;let d=pos(),ql=Math.min(+$('closeLong').value,d.lq),qs=Math.min(+$('closeShort').value,d.sq),a=+$('addMargin').value,pL=ql*(market.price-d.le),pS=qs*(d.se-market.price),n={...d,lq:d.lq-ql,sq:d.sq-qs,wallet:d.wallet+pL+pS,added:d.added+a},eq=eqAt(market.price,n),lp=approxLiq(n,d);$('sim').innerHTML=`<table><tr><td>롱 실현</td><td>${pL.toFixed(2)}</td></tr><tr><td>숏 실현</td><td>${pS.toFixed(2)}</td></tr><tr><td>남은 롱/숏</td><td>${n.lq.toFixed(3)} / ${n.sq.toFixed(3)}</td></tr><tr><td>Equity</td><td>$${eq.toFixed(2)}</td></tr><tr><td>추정 청산가</td><td>${isFinite(lp)?'$'+lp.toFixed(0):'--'}</td></tr></table>`}
+function quickSim(ql,qs,a){$('closeLong').value=ql;$('closeShort').value=qs;$('addMargin').value=a;simulate()}
+function setTF(tf){chartTF=tf;['1h','4h','1d'].forEach(x=>$('b'+x).className=x===tf?'active':'');drawCandles()}
+function toggleOverlay(k){overlays[k]=!overlays[k];drawCandles()}
+function chartData(){return chartTF==='1h'?market.h1:chartTF==='1d'?market.d1:market.h4}
+function drawCandles(){if(!market.h4)return;let canvas=$('priceChart'),wrap=canvas.parentElement,dpr=devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;let ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);let k=chartData().slice(-120),o=k.map(x=>+x[1]),h=k.map(x=>+x[2]),l=k.map(x=>+x[3]),c=k.map(x=>+x[4]),e5=ema(c,5),m15=sma(c,15),e10=ema(c,10),e120=ema(c,120),su=supertrend(h,l,c),padL=8,padR=56,padY=15,min=Math.min(...l),max=Math.max(...h),cw=(W-padL-padR)/k.length,X=i=>padL+i*cw+cw/2,Y=v=>padY+(max-v)/(max-min)*(H-2*padY);ctx.strokeStyle='#1d2b40';ctx.lineWidth=1;for(let j=1;j<5;j++){let y=padY+j*(H-2*padY)/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}for(let i=0;i<k.length;i++){let up=c[i]>=o[i],col=up?'#13b981':'#ef5a5a';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(X(i),Y(h[i]));ctx.lineTo(X(i),Y(l[i]));ctx.stroke();let y1=Y(Math.max(o[i],c[i])),y2=Y(Math.min(o[i],c[i]));ctx.fillRect(X(i)-Math.max(1,cw*.28),y1,Math.max(2,cw*.56),Math.max(1,y2-y1))}
+ function line(arr,col){ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.beginPath();let started=false;arr.forEach((v,i)=>{if(v==null)return;started?ctx.lineTo(X(i),Y(v)):(ctx.moveTo(X(i),Y(v)),started=true)});ctx.stroke()}
+ if(overlays.ema5)line(e5,'#2f6fed');if(overlays.ma15)line(m15,'#f0a52b');if(overlays.ema10)line(e10,'#22c3ee');if(overlays.ema120)line(e120,'#8b5cf6');if(overlays.st)line(su.st,'#13b981');
+ ctx.fillStyle='#9aabc2';ctx.font='11px system-ui';for(let j=0;j<=4;j++){let v=max-j*(max-min)/4;ctx.fillText(Math.round(v).toLocaleString(),W-padR+4,Y(v)+4)}$('chartPrice').textContent=`${chartTF.toUpperCase()} · $${c[c.length-1].toLocaleString(undefined,{maximumFractionDigits:0})}`}
+window.addEventListener('resize',()=>drawCandles());
+loadPos();refreshAll();setInterval(refreshAll,60000);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script>
-</body>
-</html>
+</body></html>
