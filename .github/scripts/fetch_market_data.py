@@ -4,6 +4,21 @@ SYMBOLS = [
     "AAPL","NVDA","MSFT","TSLA","AMZN","GOOGL","META",
     "005930.KS","000660.KS","068270.KS","035420.KS","051910.KS"
 ]
+META = {
+    "005930.KS": {"companyName":"삼성전자","market":"KOSPI","currency":"KRW"},
+    "000660.KS": {"companyName":"SK하이닉스","market":"KOSPI","currency":"KRW"},
+    "068270.KS": {"companyName":"셀트리온","market":"KOSPI","currency":"KRW"},
+    "035420.KS": {"companyName":"NAVER","market":"KOSPI","currency":"KRW"},
+    "051910.KS": {"companyName":"LG화학","market":"KOSPI","currency":"KRW"},
+    "AAPL": {"companyName":"Apple","market":"NASDAQ","currency":"USD"},
+    "NVDA": {"companyName":"NVIDIA","market":"NASDAQ","currency":"USD"},
+    "MSFT": {"companyName":"Microsoft","market":"NASDAQ","currency":"USD"},
+    "TSLA": {"companyName":"Tesla","market":"NASDAQ","currency":"USD"},
+    "AMZN": {"companyName":"Amazon","market":"NASDAQ","currency":"USD"},
+    "GOOGL": {"companyName":"Alphabet","market":"NASDAQ","currency":"USD"},
+    "META": {"companyName":"Meta Platforms","market":"NASDAQ","currency":"USD"},
+}
+
 OUT = "data/stocks"
 os.makedirs(OUT, exist_ok=True)
 
@@ -66,7 +81,8 @@ for symbol in SYMBOLS:
         prev=meta.get("chartPreviousClose") or meta.get("previousClose") or price
         change=((price/prev)-1)*100 if price and prev else 0
         payload={"symbol":symbol,"generatedAt":datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                 "price":price,"change":change,"m15":m15,"h1":h1,"h4":h4,"d1":d1,"w1":w1,"source":"Yahoo Finance","schemaVersion":"7.5"}
+                 "price":price,"change":change,"m15":m15,"h1":h1,"h4":h4,"d1":d1,"w1":w1,"source":"Yahoo Finance","schemaVersion":"7.6"}
+        payload.update(META.get(symbol,{}))
         with open(os.path.join(OUT,symbol+".json"),"w",encoding="utf-8") as f:
             json.dump(payload,f,separators=(",",":"),ensure_ascii=False)
         print("OK",symbol)
