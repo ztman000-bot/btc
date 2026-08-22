@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" />
+  <title>BTC Hedge Assistant</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#e5e7eb;background:#0b1020}
+    *{box-sizing:border-box} body{margin:0;background:#0b1020;color:#e5e7eb}
+    .app{max-width:760px;margin:0 auto;padding:14px 14px 90px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    h1{font-size:20px;margin:0}.sub{font-size:12px;color:#9ca3af}
+    .card{background:#111827;border:1px solid #243042;border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .metric{background:#0f172a;border-radius:12px;padding:10px}.metric .k{font-size:12px;color:#94a3b8}.metric .v{font-size:18px;font-weight:700;margin-top:4px}
+    .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
+    .A{background:#064e3b;color:#a7f3d0}.B{background:#78350f;color:#fde68a}.C{background:#3f3f46;color:#e4e4e7}
+    label{display:block;font-size:12px;color:#9ca3af;margin-bottom:5px} input,select{width:100%;padding:10px 11px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:15px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    button{border:0;border-radius:11px;padding:11px 12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px}.btn2{background:#374151}.danger{background:#991b1b}.ok{background:#047857}
+    table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid #273244;text-align:right}th:first-child,td:first-child{text-align:left}
+    .status{font-size:14px;line-height:1.55}.muted{color:#94a3b8}.footer{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.95);backdrop-filter:blur(10px);border-top:1px solid #243042;padding:10px}.footer-inner{max-width:760px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .pill{padding:8px 10px;border-radius:10px;background:#0f172a;font-size:12px;margin:4px 4px 0 0;display:inline-block}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div><h1>BTC Hedge Assistant</h1><div class="sub">모바일 PWA · 판단/시뮬레이션 전용</div></div><span id="signalBadge" class="badge C">C · 관망</span></div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="metric"><div class="k">BTC 현재가</div><div class="v" id="price">-</div></div>
+      <div class="metric"><div class="k">24h 변동</div><div class="v" id="change">-</div></div>
+      <div class="metric"><div class="k">순포지션</div><div class="v" id="net">-</div></div>
+      <div class="metric"><div class="k">예상 Equity</div><div class="v" id="equity">-</div></div>
+    </div>
+    <div class="status" id="advice" style="margin-top:12px">데이터를 불러오는 중입니다.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">현재 포지션</h3>
+    <div class="row">
+      <div><label>롱 수량 BTC</label><input id="longQty" type="number" step="0.001" value="2.05"></div>
+      <div><label>롱 평단</label><input id="longEntry" type="number" step="0.01" value="94171.48"></div>
+      <div><label>숏 수량 BTC</label><input id="shortQty" type="number" step="0.001" value="2.10"></div>
+      <div><label>숏 평단</label><input id="shortEntry" type="number" step="0.01" value="62332.59"></div>
+      <div><label>Wallet Balance</label><input id="wallet" type="number" step="0.01" value="69936.30"></div>
+      <div><label>표시 청산가</label><input id="liq" type="number" step="0.01" value="117088.72"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">지표 입력 / 상태</h3>
+    <div class="row">
+      <div><label>4H EMA5</label><input id="ema5" type="number" step="0.01"></div>
+      <div><label>4H MA15</label><input id="ma15" type="number" step="0.01"></div>
+      <div><label>4H EMA10</label><input id="ema10" type="number" step="0.01"></div>
+      <div><label>4H EMA120</label><input id="ema120" type="number" step="0.01"></div>
+      <div><label>+DI</label><input id="pdi" type="number" step="0.01"></div>
+      <div><label>-DI</label><input id="mdi" type="number" step="0.01"></div>
+      <div><label>ADX</label><input id="adx" type="number" step="0.01"></div>
+      <div><label>SuperTrend</label><select id="st"><option value="up">상승</option><option value="down">하락</option></select></div>
+    </div>
+    <div class="row3" style="margin-top:10px">
+      <button class="btn2" onclick="setPreset('bull')">상승 예시</button>
+      <button class="btn2" onclick="setPreset('neutral')">중립 예시</button>
+      <button class="btn2" onclick="setPreset('bear')">하락 예시</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">포지션 시뮬레이터</h3>
+    <div class="row">
+      <div><label>숏 정리 수량 BTC</label><input id="closeShort" type="number" step="0.01" value="0.20"></div>
+      <div><label>추가 증거금 USDT</label><input id="addMargin" type="number" step="100" value="0"></div>
+    </div>
+    <div class="row3" style="margin-top:10px">
+      <button onclick="quickClose(0.1)">숏 0.1</button>
+      <button onclick="quickClose(0.2)">숏 0.2</button>
+      <button onclick="quickClose(0.3)">숏 0.3</button>
+    </div>
+    <div class="row3" style="margin-top:8px">
+      <button class="ok" onclick="quickMargin(300)">+300</button>
+      <button class="ok" onclick="quickMargin(600)">+600</button>
+      <button class="btn2" onclick="quickMargin(0)">추가금 0</button>
+    </div>
+    <div id="simResult" class="status" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">핵심 가격 레벨</h3>
+    <div><span class="pill">80K 돌파·유지</span><span class="pill">82K</span><span class="pill">85K</span><span class="pill">90K</span><span class="pill">75K 이탈</span><span class="pill">72K</span><span class="pill">70K</span><span class="pill">68K</span></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">판단 규칙</h3>
+    <table><tr><th>등급</th><th>조건</th></tr>
+      <tr><td>A 상승</td><td>4H 80K+ · ST상승 · EMA5&gt;MA15 · EMA10&gt;EMA120 · +DI&gt;-DI · ADX≥20</td></tr>
+      <tr><td>A 하락</td><td>75K↓ · ST하락 · EMA5&lt;MA15 · -DI&gt;+DI · ADX 상승</td></tr>
+      <tr><td>B</td><td>방향성은 있으나 핵심 가격 또는 일부 지표 미확인</td></tr>
+      <tr><td>C</td><td>혼조/횡보. 헷지 유지 우선</td></tr>
+    </table>
+  </div>
+</div>
+<div class="footer"><div class="footer-inner"><button onclick="refreshAll()">새로고침</button><button class="btn2" onclick="saveState()">설정 저장</button></div></div>
+<script>
+const $=id=>document.getElementById(id);
+let market={price:77330,change:0};
+function n(id){return parseFloat($(id).value)||0}
+function fmt(x,d=2){return Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+async function fetchMarket(){
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT',{cache:'no-store'});
+    const j=await r.json(); market.price=parseFloat(j.lastPrice); market.change=parseFloat(j.priceChangePercent);
+  }catch(e){ console.warn('시장 데이터 실패',e); }
+}
+function calc(){
+  const P=market.price,L=n('longQty'),S=n('shortQty'),LE=n('longEntry'),SE=n('shortEntry'),W=n('wallet');
+  const unreal=L*(P-LE)+S*(SE-P); const eq=W+unreal; const net=L-S;
+  $('price').textContent='$'+fmt(P,0); $('change').textContent=(market.change>=0?'+':'')+fmt(market.change,2)+'%'; $('net').textContent=fmt(net,3)+' BTC'; $('equity').textContent='$'+fmt(eq,0);
+  const e5=n('ema5'),m15=n('ma15'),e10=n('ema10'),e120=n('ema120'),pdi=n('pdi'),mdi=n('mdi'),adx=n('adx'),st=$('st').value;
+  let bull=0,bear=0; if(e5&&m15){e5>m15?bull++:bear++} if(e10&&e120){e10>e120?bull++:bear++} if(pdi||mdi){pdi>mdi?bull++:bear++} if(adx>=20){if(st==='up')bull++;else bear++} if(st==='up')bull++;else bear++;
+  if(P>=80000) bull++; if(P<75000) bear++;
+  let grade='C',text='혼조 구간: 헷지 유지 우선.';
+  if(bull>=5&&bull>=bear+2){grade='A';text='상승 A급 후보: 숏 단계 축소 검토. 실제 주문 전 청산가/마진비율 재확인.'}
+  else if(bear>=5&&bear>=bull+2){grade='A';text='하락 A급 후보: 숏 유지·방어 우선. 하단 반전 신호에서 숏 익절 준비.'}
+  else if(Math.max(bull,bear)>=3){grade='B';text=bull>bear?'상승 B급: 4H 종가·80K 돌파 확인 대기.':'하락 B급: 75K/72K 이탈 여부 확인.'}
+  $('signalBadge').className='badge '+grade; $('signalBadge').textContent=grade+' · '+(bull>bear?'상승':'관망/하락'); $('advice').textContent=text;
+  simulate();
+}
+function simulate(){
+  const P=market.price,L=n('longQty'),S=n('shortQty'),LE=n('longEntry'),SE=n('shortEntry'),W=n('wallet');
+  const q=Math.min(n('closeShort'),S), add=n('addMargin'); const realized=q*(SE-P); const W2=W+realized+add; const S2=S-q; const unreal2=L*(P-LE)+S2*(SE-P); const eq2=W2+unreal2;
+  $('simResult').innerHTML=`정리 실현손익 <b>${realized>=0?'+':''}$${fmt(realized)}</b><br>정리 후 숏 <b>${fmt(S2,3)} BTC</b> · 순포지션 <b>${fmt(L-S2,3)} BTC</b><br>지갑잔고 <b>$${fmt(W2)}</b> · Equity <b>$${fmt(eq2)}</b>`;
+}
+function quickClose(v){$('closeShort').value=v;simulate()} function quickMargin(v){$('addMargin').value=v;simulate()}
+function setPreset(t){ if(t==='bull'){ema5.value=78000;ma15.value=77000;ema10.value=76000;ema120.value=70000;pdi.value=38;mdi.value=15;adx.value=28;st.value='up'} else if(t==='bear'){ema5.value=74000;ma15.value=76000;ema10.value=72000;ema120.value=74000;pdi.value=14;mdi.value=36;adx.value=30;st.value='down'} else {ema5.value=77000;ma15.value=77100;ema10.value=75000;ema120.value=74800;pdi.value=24;mdi.value=22;adx.value=17;st.value='up'} calc() }
+function saveState(){['longQty','longEntry','shortQty','shortEntry','wallet','liq','ema5','ma15','ema10','ema120','pdi','mdi','adx','st','closeShort','addMargin'].forEach(id=>localStorage.setItem(id,$(id).value)); alert('저장했습니다.')}
+function loadState(){['longQty','longEntry','shortQty','shortEntry','wallet','liq','ema5','ma15','ema10','ema120','pdi','mdi','adx','st','closeShort','addMargin'].forEach(id=>{const v=localStorage.getItem(id);if(v!==null)$(id).value=v})}
+async function refreshAll(){await fetchMarket();calc()}
+window.addEventListener('input',calc); window.addEventListener('change',calc);
+loadState(); refreshAll(); setInterval(refreshAll,60000);
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+</script>
+</body></html>
