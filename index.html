@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#0b1118"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v7.1</title>
+<title>BTC Hedge Assistant v7.3</title>
 <style>
 :root{
   --bg:#0b1118;--panel:#111923;--panel2:#0d151f;--line:#27323f;--grid:#263241;
@@ -148,7 +148,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 </head>
 <body>
 <header>
-  <div class="row"><div><h1>BTC Hedge Assistant v7.1</h1><div class="sub">Hedge Desk + Scanner · 주식 데이터 자동우회 · 추세/진입 분리 · 5개 시간봉</div></div><span id="liveState" class="pill">연결중</span></div>
+  <div class="row"><div><h1>BTC Hedge Assistant v7.3</h1><div class="sub">Hedge Desk + Scanner · 5분 주식 릴레이 · 최신 재조회 · 추세/진입 분리</div></div><span id="liveState" class="pill">연결중</span></div>
 </header>
 
 <main>
@@ -168,7 +168,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
       <div id="markLine" class="small">Mark -- · 실시간 대기</div>
     </div>
     <div class="card">
-      <div class="label">V7.1 전략 모드</div>
+      <div class="label">V7.3 전략 모드</div>
       <div id="mode" class="mid warn">--</div>
       <div id="modeHint" class="small">--</div>
       <div class="row" style="margin-top:8px"><span class="small">종합 신뢰도</span><b id="confidence">--%</b></div>
@@ -294,23 +294,23 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
   </div>
 
   <div id="trade" class="tabPane activePane card">
-    <div class="row"><b>V7.1 실전 매매표</b><span class="badge">현재 구간 자동 강조</span></div><div class="small" style="margin:5px 0">가격별 예상 롱/숏 잔량·순노출·실행 상태·안전거리 로드맵</div>
+    <div class="row"><b>V7.3 실전 매매표</b><span class="badge">현재 구간 자동 강조</span></div><div class="small" style="margin:5px 0">가격별 예상 롱/숏 잔량·순노출·실행 상태·안전거리 로드맵</div>
     <div id="actionMap" class="actionMap" style="margin-bottom:8px"></div>
     <div class="tableWrap desktopRoadmap"><table id="ladder"></table></div><div id="ladderMobile" class="mobileRoadmap"></div>
   </div>
 
   
   <div id="scanner" class="tabPane card">
-    <div class="row"><b>Market Trend Scanner v1.1</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
-    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식의 1H/4H/1D 추세를 분석합니다. 자동주문은 하지 않습니다.</div>
+    <div class="row"><b>Market Trend Scanner v1.3</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
+    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. 주식 릴레이는 5분 주기로 자동 갱신되며, 분석/최신 재조회 시 캐시를 쓰지 않고 최신 JSON을 다시 읽습니다.</div>
     <div class="grid2" style="margin-top:9px">
       <div class="field"><label>자산 종류</label><select id="scanType"><option value="crypto">코인 (Binance)</option><option value="us">미국주식</option><option value="kr">국내주식</option></select></div>
       <div class="field"><label>티커/심볼</label><input id="scanSymbol" value="BTCUSDT" placeholder="BTCUSDT / AAPL / 005930.KS"></div>
     </div>
     <div class="stack" style="margin-top:8px">
-      <button class="primary" onclick="scanAsset()">분석 실행</button><button onclick="addCurrentToWatch()">관심종목 추가</button>
+      <button class="primary" onclick="scanAsset()">분석 실행</button><button onclick="forceFreshStockScan()">최신 데이터 재조회</button><button onclick="addCurrentToWatch()">관심종목 추가</button>
       <button onclick="quickScan('BTCUSDT','crypto')">BTC</button><button onclick="quickScan('ETHUSDT','crypto')">ETH</button>
-      <button onclick="quickScan('AAPL','us')">AAPL</button><button onclick="quickScan('NVDA','us')">NVDA</button><button onclick="quickScan('005930.KS','kr')">삼성전자</button>
+      <button onclick="quickScan('AAPL','us')">AAPL</button><button onclick="quickScan('NVDA','us')">NVDA</button><button onclick="quickScan('005930.KS','kr')">삼성전자</button><button onclick="quickScan('000660.KS','kr')">SK하이닉스</button>
     </div>
     
     <div id="scannerResult" class="card scannerHero" style="margin-top:10px">
@@ -443,7 +443,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
     </div>
   </div>
 
-  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V7.1의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
+  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V7.3의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
 </main>
 
 <footer>
@@ -459,7 +459,7 @@ const $=id=>document.getElementById(id);
 let market={}, chartTF='4h', currentDecision={action:'WAIT',reason:'',qty:0,exec:false}, currentCrossIndex=null;
 let overlays={ema5:true,ma15:true,ema10:true,ema120:true,bb:true,st:true,cross:true,positions:true};
 let liveWS=null,klineWS=null,lastLiveTs=0,viewCount=100,viewOffset=0,dragStartX=null,dragStartOffset=0,pinchStartDist=null,pinchStartCount=null,showIndicatorPanels=true,lastDecisionSig='';
-let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerWatch=JSON.parse(localStorage.getItem('v71watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v71positionUpdatedAt')||0);
+let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerForceFresh=false,scannerWatch=JSON.parse(localStorage.getItem('v73watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v73positionUpdatedAt')||0);
 
 function ema(a,n){let k=2/(n+1),r=[],v=a[0];for(let i=0;i<a.length;i++){v=i?a[i]*k+v*(1-k):a[i];r.push(v)}return r}
 function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
@@ -536,13 +536,13 @@ function toggleIndicatorPanels(){
 }
 function blockerHTML(items){return items.map(x=>`<span class="blocker ${x.sev||''}">${x.text}</span>`).join('')}
 function exportAll(){
-  let payload={version:'7.1',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v71log')||'[]')};
+  let payload={version:'7.3',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v73log')||'[]')};
   let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v71_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v73_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
 }
 function importAll(inp){
   let f=inp.files&&inp.files[0];if(!f)return;let r=new FileReader();
-  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v71pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v71log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
+  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v73pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v73log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
 }
 
 function connectLive(){
@@ -595,7 +595,7 @@ function weightedConfidence(){
 }
 function liqDistancePct(d){return(!d.liq||!market.price)?999:Math.abs(d.liq-market.price)/market.price*100}
 function reserveLeft(d){return Math.max(0,2000-d.added)}
-function cooldownActive(){let log=JSON.parse(localStorage.getItem('v71log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
+function cooldownActive(){let log=JSON.parse(localStorage.getItem('v73log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
 
 function decide(){
   if(!market.i4)return;
@@ -773,7 +773,7 @@ function estimateRiskEfficiency(){
 }
 function positionAgeMinutes(){return positionUpdatedAt?Math.floor((Date.now()-positionUpdatedAt)/60000):999999}
 function markPositionUpdated(){
-  positionUpdatedAt=Date.now();localStorage.setItem('v71positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
+  positionUpdatedAt=Date.now();localStorage.setItem('v73positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
 }
 function renderPositionFreshness(){
   let m=positionAgeMinutes(),fresh=m<=60,txt=!positionUpdatedAt?'포지션 확인 기록 없음':m<60?`${m}분 전 확인`:m<1440?`${Math.floor(m/60)}시간 전 확인`:`${Math.floor(m/1440)}일 전 확인`;
@@ -849,9 +849,9 @@ function drawEquityCurve(curve){
 }
 
 function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0,feeRate:0.04,fundingRate:0.01}}
-function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v71pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
+function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v73pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
 function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
-function savePos(){localStorage.setItem('v71pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v71positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V7.1 설정 저장 완료')}
+function savePos(){localStorage.setItem('v73pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v73positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V7.3 설정 저장 완료')}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
 function updatePosStats(){
   if(!market.price)return;
@@ -1060,25 +1060,59 @@ function v71Signal(t15,t1,t4,td,tw,trend,entry){
   let signal='관망',cls='signalWAIT',regime='혼조/전환',setup='추세가 명확해질 때까지 대기',category='risk';
   let longAligned=t4.bias>=2&&td.bias>=3&&tw.bias>=2;
   let shortAligned=t4.bias<=-2&&td.bias<=-3&&tw.bias<=-2;
+
   if(longAligned){
     regime='중장기 상승';
-    category='buy';
-    if(td.rsi>=80||t4.rsi>=80){signal='상승 과열';cls='signalHOT';setup='추격매수 금지 · 눌림 또는 돌파 재확인';category='hot'}
-    else if(t1.bias<0||t15.bias<0){signal='눌림목 관심';cls='signalBUY';setup='단기 조정 종료 확인 후 분할 접근';category='pullback'}
-    else if(entry>=75){signal='강한 매수 후보';cls='signalBUY';setup='추세 유지 + 거래량 확인 시 분할 진입 후보';category='buy'}
-    else {signal='추세추종 매수 후보';cls='signalBUY';setup='돌파 확인 또는 눌림 대기';category='buy'}
-  } else if(shortAligned){
-    regime='중장기 하락';category='risk';
-    if(td.rsi<=20||t4.rsi<=20){signal='하락 과매도';cls='signalHOT';setup='추격매도 금지 · 반등 위험 확인';category='hot'}
-    else {signal='매도/회피 후보';cls='signalSELL';setup='신규매수 보류 · 반등 시 위험관리';}
-  } else if(td.bias>0&&tw.bias>0){
+    if(td.rsi>=80||t4.rsi>=80){
+      signal='과열 · 눌림 대기'; cls='signalHOT';
+      setup='상승추세는 유지되지만 추격매수 금지 · 눌림 또는 재돌파 확인';
+      category='hot';
+    }else if(t1.bias<0||t15.bias<0){
+      signal='눌림 대기'; cls='signalWAIT';
+      setup='장기 상승 유지 · 단기 조정 종료 확인 후 분할 접근';
+      category='pullback';
+    }else if(entry>=75){
+      signal='강한 매수 후보'; cls='signalBUY';
+      setup='다중 시간봉 정렬 + 진입점수 우수 · 분할 진입 후보';
+      category='buy';
+    }else if(entry>=55){
+      signal='돌파 대기'; cls='signalWAIT';
+      setup='추세는 상승이나 진입 확률은 중간 · 돌파 또는 눌림 재확인';
+      category='breakout';
+    }else{
+      signal='상승 유지 · 관망'; cls='signalWAIT';
+      setup='중장기 상승이나 현재 진입점수가 낮아 추격 진입 보류';
+      category='pullback';
+    }
+  }else if(shortAligned){
+    regime='중장기 하락';
+    if(td.rsi<=20||t4.rsi<=20){
+      signal='과매도 · 반등 주의'; cls='signalHOT';
+      setup='하락추세이나 추격매도 금지 · 반등 위험 확인';
+      category='hot';
+    }else if(entry>=70){
+      signal='강한 매도/회피'; cls='signalSELL';
+      setup='하락 정렬 강함 · 신규매수 회피 및 위험관리 우선';
+      category='risk';
+    }else{
+      signal='반등 대기 · 매수 보류'; cls='signalSELL';
+      setup='장기 하락 유지 · 추세 전환 전 신규매수 보류';
+      category='risk';
+    }
+  }else if(td.bias>0&&tw.bias>0){
     regime='장기 상승 · 단기 혼조';
-    signal='눌림 대기';cls='signalWAIT';setup='4H 정렬 회복을 기다림';category='pullback'
-  } else if(td.bias<0&&tw.bias<0){
+    signal=entry>=60?'돌파 대기':'눌림 대기';
+    cls='signalWAIT'; setup='4H 정렬 회복 또는 지지 확인을 기다림'; category='pullback';
+  }else if(td.bias<0&&tw.bias<0){
     regime='장기 하락 · 단기 혼조';
-    signal='반등 추격 금지';cls='signalSELL';setup='추세 전환 확인 전 신규매수 보류';category='risk'
+    signal='반등 추격 금지'; cls='signalSELL';
+    setup='추세 전환 확인 전 신규매수 보류'; category='risk';
+  }else{
+    regime='방향성 혼조';
+    signal='관망'; cls='signalWAIT';
+    setup='시간봉 간 방향 불일치 · 신호 확정 전 대기'; category='risk';
   }
-  if(longAligned && t4.last >= Math.max(...t4.rows.slice(-20,-1).map(x=>x[2]))*0.997){category='breakout'}
+
   return {signal,cls,regime,setup,category};
 }
 function scanTFCard(name,t){
@@ -1096,6 +1130,47 @@ async function fetchCryptoScanner(symbol){
 async function fetchYahooScanner(symbol){
   let trace=[];
   let mk=(range,interval)=>`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&includePrePost=false&events=div%2Csplits`;
+
+  // 최신 재조회 버튼을 누른 경우 브라우저 실시간 경로를 먼저 한 번 시도
+  if(scannerForceFresh){
+    trace.push('최신 재조회: Yahoo 브라우저 경로 우선 시도');
+    try{
+      let [r15,r1,rd,rw]=await Promise.all([
+        yahooJsonWithFallback(mk('5d','15m'),trace),
+        yahooJsonWithFallback(mk('60d','1h'),trace),
+        yahooJsonWithFallback(mk('2y','1d'),trace),
+        yahooJsonWithFallback(mk('10y','1wk'),trace)
+      ]);
+      let m15=rowsFromYahoo(r15.json),h1=rowsFromYahoo(r1.json),d1=rowsFromYahoo(rd.json),w1=rowsFromYahoo(rw.json),h4=aggregateRows(h1,4);
+      let meta=r1.json.chart.result[0].meta||{},price=meta.regularMarketPrice||h1[h1.length-1][4],prev=meta.chartPreviousClose||meta.previousClose||price;
+      trace.push('✓ 브라우저 최신 주식 데이터 성공');
+      return {price:+price,change:prev?((price/prev)-1)*100:0,m15,h1,h4,d1,w1,source:'Yahoo Live',trace,relayAgeMin:0};
+    }catch(e){
+      trace.push('× 브라우저 최신 조회 실패 → GitHub Relay 사용');
+    }
+  }
+
+  // 동일 출처 GitHub Pages relay JSON
+  let relayPath='./data/stocks/'+encodeURIComponent(symbol)+'.json?v='+Date.now();
+  try{
+    trace.push('GitHub Stock Relay 시도');
+    let relay=await fetchJsonTimeout(relayPath,8000);
+    if(relay && relay.symbol===symbol && relay.m15 && relay.h1 && relay.d1 && relay.w1){
+      let ageMin=relay.generatedAt?Math.max(0,(Date.now()-Date.parse(relay.generatedAt))/60000):null;
+      trace.push('✓ GitHub Stock Relay 성공'+(ageMin!=null?' · 생성 '+ageMin.toFixed(0)+'분 전':''));
+      let h4=relay.h4&&relay.h4.length?relay.h4:aggregateRows(relay.h1,4);
+      return {
+        price:+relay.price, change:+(relay.change||0),
+        m15:relay.m15,h1:relay.h1,h4,d1:relay.d1,w1:relay.w1,
+        source:'GitHub Stock Relay',trace,relayAgeMin:ageMin
+      };
+    }
+    throw new Error('릴레이 JSON 형식 불완전');
+  }catch(e){
+    trace.push('× GitHub Stock Relay 실패: '+e.message);
+  }
+
+  // 마지막 fallback
   let [r15,r1,rd,rw]=await Promise.all([
     yahooJsonWithFallback(mk('5d','15m'),trace),
     yahooJsonWithFallback(mk('60d','1h'),trace),
@@ -1105,7 +1180,7 @@ async function fetchYahooScanner(symbol){
   let m15=rowsFromYahoo(r15.json),h1=rowsFromYahoo(r1.json),d1=rowsFromYahoo(rd.json),w1=rowsFromYahoo(rw.json),h4=aggregateRows(h1,4);
   let meta=r1.json.chart.result[0].meta||{},price=meta.regularMarketPrice||h1[h1.length-1][4],prev=meta.chartPreviousClose||meta.previousClose||price;
   let sources=[r15.source,r1.source,rd.source,rw.source];
-  return {price:+price,change:prev?((price/prev)-1)*100:0,m15,h1,h4,d1,w1,source:[...new Set(sources)].join(' + '),trace};
+  return {price:+price,change:prev?((price/prev)-1)*100:0,m15,h1,h4,d1,w1,source:[...new Set(sources)].join(' + '),trace,relayAgeMin:null};
 }
 async function analyzeScannerSymbol(symbol,type){
   symbol=normalizeSymbol(symbol,type);
@@ -1133,16 +1208,47 @@ function renderScannerResult(r){
   $('scannerFresh').textContent='방금 갱신'; $('scannerFresh').className='scannerBadge srcOK';
   $('scannerTrace').innerHTML=(r.trace||[]).join('<br>');
 }
+
+function clearScannerResult(symbol,type,msg){
+  scannerCurrent=null;
+  $('scanName').textContent=symbol+' · '+(type==='kr'?'국내주식':type==='us'?'미국주식':'코인');
+  $('scanScoreRing').textContent='--'; $('scanScoreRing').style.borderColor='#526174';
+  $('trendScore').textContent='--'; $('trendBar').style.width='0%';
+  $('entryScore').textContent='--'; $('entryBar').style.width='0%';
+  $('scanSignal').textContent='데이터 없음'; $('scanSignal').className='big signalWAIT';
+  $('scanRegime').textContent='분석 중지';
+  $('scanSetup').innerHTML=msg||'데이터를 불러오지 못해 판단을 중단했습니다.';
+  ['lvlPull1','lvlPull2','lvlBreak','lvlInvalid','lvlTarget1','lvlTarget2'].forEach(id=>$(id).textContent='--');
+  $('scanTF').innerHTML=['15M','1H','4H','1D','1W'].map(x=>`<div><b>${x}</b><br><span class="small">데이터 없음</span></div>`).join('');
+}
+
+
+async function forceFreshStockScan(){
+  let type=$('scanType').value;
+  if(type==='crypto'){ return scanAsset(); }
+  scannerForceFresh=true;
+  try{ await scanAsset(); }
+  finally{ scannerForceFresh=false; }
+}
+
 async function scanAsset(){
   let type=$('scanType').value,symbol=normalizeSymbol($('scanSymbol').value,type); $('scanSymbol').value=symbol;
   $('scannerSource').textContent='분석 중'; $('scannerSource').className='scannerBadge srcWARN';
   $('scannerTrace').textContent='데이터 연결 경로를 확인하고 있습니다...';
-  try{let r=await analyzeScannerSymbol(symbol,type);renderScannerResult(r)}
-  catch(e){
+  $('scannerFresh').textContent='연결 확인'; $('scannerFresh').className='scannerBadge srcWARN';
+  // 선택 종목을 먼저 반영하여 직전 BTC 결과와 혼동 방지
+  $('scanName').textContent=symbol+' · 연결 확인 중';
+  try{
+    let r=await analyzeScannerSymbol(symbol,type);
+    renderScannerResult(r);
+    if(r.source==='GitHub Stock Relay' && r.relayAgeMin!=null){
+      $('scannerFresh').textContent=r.relayAgeMin<8?'최신 릴레이':r.relayAgeMin<30?'릴레이 '+Math.round(r.relayAgeMin)+'분':'오래된 릴레이 '+Math.round(r.relayAgeMin)+'분';
+      $('scannerFresh').className='scannerBadge '+(r.relayAgeMin<30?'srcOK':'srcWARN');
+    }
+  }catch(e){
+    clearScannerResult(symbol,type,'선택한 종목의 데이터를 불러오지 못했습니다. 이전 종목 결과는 제거했습니다.');
     $('scannerSource').textContent='데이터 실패'; $('scannerSource').className='scannerBadge srcWARN';
     $('scannerFresh').textContent='신호 중지'; $('scannerFresh').className='scannerBadge srcWARN';
-    $('scanSignal').textContent='신호 없음'; $('scanSignal').className='big signalWAIT';
-    $('scanSetup').innerHTML='데이터를 안정적으로 불러오지 못해 신호 생성을 중단했습니다.';
     $('scannerTrace').textContent=e.message;
   }
 }
@@ -1150,9 +1256,9 @@ function quickScan(symbol,type){$('scanType').value=type;$('scanSymbol').value=s
 function addCurrentToWatch(){
   let type=$('scanType').value,symbol=normalizeSymbol($('scanSymbol').value,type);
   if(!scannerWatch.some(x=>x.symbol===symbol&&x.type===type))scannerWatch.push({symbol,type});
-  localStorage.setItem('v71watch',JSON.stringify(scannerWatch));renderWatchlist();
+  localStorage.setItem('v73watch',JSON.stringify(scannerWatch));renderWatchlist();
 }
-function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v71watch',JSON.stringify(scannerWatch));renderWatchlist()}
+function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v73watch',JSON.stringify(scannerWatch));renderWatchlist()}
 function renderWatchlist(){
   $('watchList').innerHTML=scannerWatch.map((w,i)=>{
     let r=scannerCache[w.type+':'+w.symbol];
@@ -1211,9 +1317,9 @@ function runBacktest(){
   $('btTable').innerHTML='<tr><th>날짜</th><th>가격</th><th>액션</th><th>수량</th><th>Gross</th><th>수수료</th><th>펀딩</th><th>Net</th><th>실현누적</th></tr>'+events.slice(-30).reverse().map(x=>`<tr><td>${x[0]}</td><td>$${Math.round(x[1]).toLocaleString()}</td><td>${x[2]}</td><td>${x[3].toFixed(2)}</td><td>${x[4].toFixed(0)}</td><td>${x[5].toFixed(0)}</td><td>${x[6].toFixed(0)}</td><td>${x[7].toFixed(0)}</td><td>${x[8].toFixed(0)}</td></tr>`).join('');
   drawEquityCurve(curve)
 }
-function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v71log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v71log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
-function clearLog(){localStorage.removeItem('v71log');renderLog();decide()}
-function renderLog(){let log=JSON.parse(localStorage.getItem('v71log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
+function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v73log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v73log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
+function clearLog(){localStorage.removeItem('v73log');renderLog();decide()}
+function renderLog(){let log=JSON.parse(localStorage.getItem('v73log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
 
 function openTab(id,btn){
   document.querySelectorAll('.tabPane').forEach(x=>x.classList.remove('activePane'));
