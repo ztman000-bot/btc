@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#0b1118"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v8.0</title>
+<title>BTC Hedge Assistant v8.1</title>
 <style>
 :root{
   --bg:#0b1118;--panel:#111923;--panel2:#0d151f;--line:#27323f;--grid:#263241;
@@ -240,10 +240,19 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 }
 </style>
 
+
+<style>
+.v81HiddenWhenEmpty{display:none!important}
+.v81DiagBox{margin-top:8px;padding:9px 10px;border:1px solid #32465b;border-radius:11px;background:#0a1520;font-size:11px;line-height:1.55;color:#b9c7d5}
+.v81DiagOK{border-color:#285c48;background:#10271f;color:#baf2d8}
+.v81DiagBad{border-color:#713e47;background:#341a1f;color:#ffb1ba}
+.v81CoreNote{font-size:10px;color:#8fa0b5;margin-top:5px}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row"><div><h1>BTC Hedge Assistant v8.0</h1><div class="sub">Hedge Desk + Scanner · 신호검증 · MTF 정렬 · 상태머신 · R:R</div></div><span id="liveState" class="pill">연결중</span></div>
+  <div class="row"><div><h1>BTC Hedge Assistant v8.1</h1><div class="sub">Hedge Desk + Scanner · 코인 연결복구 · 핵심카드 우선 · 신호검증</div></div><span id="liveState" class="pill">연결중</span></div>
 </header>
 
 <main>
@@ -263,7 +272,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
       <div id="markLine" class="small">Mark -- · 실시간 대기</div>
     </div>
     <div class="card">
-      <div class="label">V8.0 전략 모드</div>
+      <div class="label">V8.1 전략 모드</div>
       <div id="mode" class="mid warn">--</div>
       <div id="modeHint" class="small">--</div>
       <div class="row" style="margin-top:8px"><span class="small">종합 신뢰도</span><b id="confidence">--%</b></div>
@@ -389,15 +398,15 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
   </div>
 
   <div id="trade" class="tabPane activePane card">
-    <div class="row"><b>V8.0 실전 매매표</b><span class="badge">현재 구간 자동 강조</span></div><div class="small" style="margin:5px 0">가격별 예상 롱/숏 잔량·순노출·실행 상태·안전거리 로드맵</div>
+    <div class="row"><b>V8.1 실전 매매표</b><span class="badge">현재 구간 자동 강조</span></div><div class="small" style="margin:5px 0">가격별 예상 롱/숏 잔량·순노출·실행 상태·안전거리 로드맵</div>
     <div id="actionMap" class="actionMap" style="margin-bottom:8px"></div>
     <div class="tableWrap desktopRoadmap"><table id="ladder"></table></div><div id="ladderMobile" class="mobileRoadmap"></div>
   </div>
 
   
   <div id="scanner" class="tabPane card">
-    <div class="row"><b>Market Trend Scanner v2.0</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
-    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.0은 신호 발생 시점을 저장하고 이후 1H·4H·24H 성과를 자동 검증해 신호의 실제 적중률을 누적합니다.</div>
+    <div class="row"><b>Market Trend Scanner v2.1</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
+    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.1은 Binance 코인 데이터를 다중 공개 엔드포인트로 자동 복구하고 실패 단계를 정확히 표시합니다.</div>
     <div class="grid2" style="margin-top:9px">
       <div class="field"><label>자산 종류</label><select id="scanType"><option value="crypto">코인 (Binance)</option><option value="us">미국주식</option><option value="kr">국내주식</option></select></div>
       <div class="field"><label>티커/심볼 또는 종목명</label>
@@ -416,6 +425,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
       <button onclick="quickScan('AAPL','us')">AAPL</button><button onclick="quickScan('NVDA','us')">NVDA</button><button onclick="quickScan('005930.KS','kr')">삼성전자</button><button onclick="quickScan('000660.KS','kr')">SK하이닉스</button><button onclick="quickScan('068270.KS','kr')">셀트리온</button>
     </div>
     
+    <div id="v81ConnDiag" class="v81DiagBox">분석 실행 시 데이터 연결 단계를 표시합니다.</div>
     <div id="scannerResult" class="card scannerHero" style="margin-top:10px">
       <div class="row">
         <div><div class="label">선택 종목</div><div id="scanName" class="mid">BTCUSDT</div></div>
@@ -447,7 +457,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 
       <div id="scanSetup" class="setupBox">분석을 실행하세요.</div>
 
-      <div class="levelGrid">
+      <div id="v81Levels" class="levelGrid">
         <div class="levelBox"><div class="label">1차 눌림 관심</div><b id="lvlPull1">--</b></div>
         <div class="levelBox"><div class="label">2차 눌림 관심</div><b id="lvlPull2">--</b></div>
         <div class="levelBox"><div class="label">돌파 확인</div><b id="lvlBreak">--</b></div>
@@ -483,12 +493,12 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
         <div class="v79ActionWhy"><b>다음 확인 조건</b><br><span id="v79Next">--</span></div>
       </div>
 
-      <details class="v78Details">
+      <details class="v78Details v81Optional">
         <summary><span>최근 신호 변화</span><span>펼치기 ▾</span></summary>
         <div class="v78DetailsBody"><div id="v79History" class="v79History">기록 없음</div></div>
       </details>
 
-      <details class="v78Details">
+      <details class="v78Details v81Optional">
         <summary><span>신호 성과 검증</span><span>펼치기 ▾</span></summary>
         <div class="v78DetailsBody">
           <div class="v80PerfGrid">
@@ -505,14 +515,14 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
         </div>
       </details>
 
-      <details class="v78Details">
+      <details class="v78Details v81Optional">
         <summary><span>세부 판단 근거</span><span>펼치기 ▾</span></summary>
         <div class="v78DetailsBody">
           <div id="decisionReasons" class="reasonLine">분석 후 표시됩니다.</div>
         </div>
       </details>
 
-      <div class="card" style="margin-top:8px">
+      <div id="v81DataDiagCard" class="card" style="margin-top:8px">
         <div class="row"><b>데이터 연결 진단</b><span id="scannerFresh" class="scannerBadge srcWARN">대기</span></div>
         <div id="scannerTrace" class="dataTrace">아직 데이터 요청 전입니다.</div>
       </div>
@@ -609,7 +619,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
     </div>
   </div>
 
-  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V7.9의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
+  <div class="notice">실제 주문은 Binance에서 수동으로 실행하세요. V8.1의 청산가·Equity·백테스트는 판단 보조용이며 실제 Binance 표시 청산가와 Margin Ratio가 우선입니다.</div>
 </main>
 
 <footer>
@@ -625,7 +635,7 @@ const $=id=>document.getElementById(id);
 let market={}, chartTF='4h', currentDecision={action:'WAIT',reason:'',qty:0,exec:false}, currentCrossIndex=null;
 let overlays={ema5:true,ma15:true,ema10:true,ema120:true,bb:true,st:true,cross:true,positions:true};
 let liveWS=null,klineWS=null,lastLiveTs=0,viewCount=100,viewOffset=0,dragStartX=null,dragStartOffset=0,pinchStartDist=null,pinchStartCount=null,showIndicatorPanels=true,lastDecisionSig='';
-let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerForceFresh=false,scannerWatch=JSON.parse(localStorage.getItem('v80watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v80positionUpdatedAt')||0);
+let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerForceFresh=false,scannerWatch=JSON.parse(localStorage.getItem('v81watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v81positionUpdatedAt')||0);
 
 function ema(a,n){let k=2/(n+1),r=[],v=a[0];for(let i=0;i<a.length;i++){v=i?a[i]*k+v*(1-k):a[i];r.push(v)}return r}
 function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
@@ -702,13 +712,13 @@ function toggleIndicatorPanels(){
 }
 function blockerHTML(items){return items.map(x=>`<span class="blocker ${x.sev||''}">${x.text}</span>`).join('')}
 function exportAll(){
-  let payload={version:'8.0',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v80log')||'[]')};
+  let payload={version:'8.1',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v81log')||'[]')};
   let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v80_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v81_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
 }
 function importAll(inp){
   let f=inp.files&&inp.files[0];if(!f)return;let r=new FileReader();
-  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v80pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v80log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
+  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v81pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v81log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
 }
 
 function connectLive(){
@@ -773,7 +783,7 @@ function weightedConfidence(){
 }
 function liqDistancePct(d){return(!d.liq||!market.price)?999:Math.abs(d.liq-market.price)/market.price*100}
 function reserveLeft(d){return Math.max(0,2000-d.added)}
-function cooldownActive(){let log=JSON.parse(localStorage.getItem('v80log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
+function cooldownActive(){let log=JSON.parse(localStorage.getItem('v81log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
 
 function decide(){
   if(!market.i4)return;
@@ -951,7 +961,7 @@ function estimateRiskEfficiency(){
 }
 function positionAgeMinutes(){return positionUpdatedAt?Math.floor((Date.now()-positionUpdatedAt)/60000):999999}
 function markPositionUpdated(){
-  positionUpdatedAt=Date.now();localStorage.setItem('v80positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
+  positionUpdatedAt=Date.now();localStorage.setItem('v81positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
 }
 function renderPositionFreshness(){
   let m=positionAgeMinutes(),fresh=m<=60,txt=!positionUpdatedAt?'포지션 확인 기록 없음':m<60?`${m}분 전 확인`:m<1440?`${Math.floor(m/60)}시간 전 확인`:`${Math.floor(m/1440)}일 전 확인`;
@@ -1027,9 +1037,9 @@ function drawEquityCurve(curve){
 }
 
 function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0,feeRate:0.04,fundingRate:0.01}}
-function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v80pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
+function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v81pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
 function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
-function savePos(){localStorage.setItem('v80pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v80positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V7.9 설정 저장 완료')}
+function savePos(){localStorage.setItem('v81pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v81positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V7.9 설정 저장 완료')}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
 function updatePosStats(){
   if(!market.price)return;
@@ -1614,16 +1624,70 @@ function v71Signal(t15,t1,t4,td,tw,trend,entry){
   return {signal,cls,regime,setup,category};
 }
 function scanTFCard(name,t){
-  return `<div><b>${name}</b><br><span class="${t.bias>=0?'good':'bad'}">상승 ${t.bull}/8 · 하락 ${t.bear}/8</span><br>RSI ${t.rsi.toFixed(1)} · ADX ${t.adx.toFixed(1)}<br>거래량 ${t.volRatio.toFixed(2)}×</div>`;
+  if(!t)return `<div><b>${name}</b><br><span class="small">데이터 없음</span></div>`;
+  let vr=Number.isFinite(t.volumeRatio)?t.volumeRatio:(Number.isFinite(t.volRatio)?t.volRatio:null);
+  let rsi=Number.isFinite(t.rsi)?t.rsi.toFixed(1):'--', adx=Number.isFinite(t.adx)?t.adx.toFixed(1):'--';
+  return `<div><b>${name}</b><br><span class="${t.bias>=0?'good':'bad'}">상승 ${t.bull}/8 · 하락 ${t.bear}/8</span><br>RSI ${rsi} · ADX ${adx}<br>거래량 ${fmtVolRatio(vr)}</div>`;
+}
+async function cryptoFetchJson(path,trace,label){
+  const hosts=[
+    'https://api.binance.com',
+    'https://api1.binance.com',
+    'https://api2.binance.com',
+    'https://api3.binance.com',
+    'https://data-api.binance.vision'
+  ];
+  let lastErr=null;
+  for(let host of hosts){
+    let url=host+path;
+    try{
+      trace.push(`${label} 시도: ${host.replace('https://','')}`);
+      let ctrl=new AbortController(), tm=setTimeout(()=>ctrl.abort(),7000);
+      let res=await fetch(url,{cache:'no-store',signal:ctrl.signal});
+      clearTimeout(tm);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      let data=await res.json();
+      if(data && data.code && Number(data.code)<0) throw new Error(data.msg||('Binance '+data.code));
+      trace.push(`✓ ${label}: ${host.replace('https://','')}`);
+      return {data,host};
+    }catch(e){
+      lastErr=e;
+      trace.push(`× ${label}: ${host.replace('https://','')} · ${e.name==='AbortError'?'timeout':e.message}`);
+    }
+  }
+  throw new Error(`${label} 전체 경로 실패 · ${lastErr?.message||'unknown'}`);
 }
 async function fetchCryptoScanner(symbol){
-  let base='https://api.binance.com/api/v3/klines?symbol='+encodeURIComponent(symbol)+'&limit=500&interval=';
-  let [m15,h1,h4,d1,w1,t]=await Promise.all([
-    J(base+'15m'),J(base+'1h'),J(base+'4h'),J(base+'1d'),J(base+'1w'),
-    J('https://api.binance.com/api/v3/ticker/24hr?symbol='+encodeURIComponent(symbol))
-  ]);
-  let conv=a=>a.map(x=>[+x[0],+x[1],+x[2],+x[3],+x[4],+x[5]]);
-  return {price:+t.lastPrice,change:+t.priceChangePercent,m15:conv(m15),h1:conv(h1),h4:conv(h4),d1:conv(d1),w1:conv(w1),source:'Binance',trace:['✓ Binance 15M/1H/4H/1D/1W']};
+  let trace=[`코인 데이터 요청: ${symbol}`];
+  let q=encodeURIComponent(symbol);
+  try{
+    // 단계별 요청으로 어느 구간에서 실패했는지 추적한다.
+    let rt=await cryptoFetchJson(`/api/v3/ticker/24hr?symbol=${q}`,trace,'24H ticker');
+    let r15=await cryptoFetchJson(`/api/v3/klines?symbol=${q}&interval=15m&limit=500`,trace,'15M');
+    let r1=await cryptoFetchJson(`/api/v3/klines?symbol=${q}&interval=1h&limit=500`,trace,'1H');
+    let r4=await cryptoFetchJson(`/api/v3/klines?symbol=${q}&interval=4h&limit=500`,trace,'4H');
+    let rd=await cryptoFetchJson(`/api/v3/klines?symbol=${q}&interval=1d&limit=500`,trace,'1D');
+    let rw=await cryptoFetchJson(`/api/v3/klines?symbol=${q}&interval=1w&limit=500`,trace,'1W');
+    let conv=a=>{
+      if(!Array.isArray(a)) return [];
+      return a.map(x=>[+x[0],+x[1],+x[2],+x[3],+x[4],+x[5]])
+              .filter(x=>x.slice(0,6).every(Number.isFinite));
+    };
+    let m15=conv(r15.data),h1=conv(r1.data),h4=conv(r4.data),d1=conv(rd.data),w1=conv(rw.data);
+    let t=rt.data||{};
+    let price=Number(t.lastPrice), change=Number(t.priceChangePercent);
+    if(!Number.isFinite(price) || m15.length<60 || h1.length<80 || h4.length<60 || d1.length<120 || w1.length<120){
+      throw new Error(`Binance 데이터 불완전 · 가격 ${Number.isFinite(price)?'OK':'없음'} · 15M ${m15.length} · 1H ${h1.length} · 4H ${h4.length} · 1D ${d1.length} · 1W ${w1.length}`);
+    }
+    trace.push(`✓ Binance 검증 완료 · 15M ${m15.length} / 1H ${h1.length} / 4H ${h4.length} / 1D ${d1.length} / 1W ${w1.length}`);
+    return {
+      symbol,price,change:Number.isFinite(change)?change:0,m15,h1,h4,d1,w1,
+      source:'Binance Multi-Endpoint',trace,cryptoHost:rt.host,generatedAt:new Date().toISOString()
+    };
+  }catch(e){
+    e.cryptoTrace=trace;
+    throw e;
+  }
 }
 async function fetchYahooScanner(symbol){
   let trace=[];
@@ -1752,14 +1816,36 @@ async function analyzeScannerSymbol(symbol,type){
   let r={symbol,type,meta,...raw,t15,t1,t4,td,tw,...trend,entryScore:entry,...sig,levels,
          score:trend.trendScore,ts:Date.now(),counts,dataQuality,qualityNotes};
   r.decisionReasons=buildDecisionReasons(r);
-  r.v79=v79StateMachine(r); r.compositeScore=v79Composite(r); r.signalHistory=v79SaveHistory(r);
-  v80UpdateOutcomes(r); r.performanceHistory=v80RecordSignal(r);
+  try{
+    r.v79=v79StateMachine(r); r.compositeScore=v79Composite(r); r.signalHistory=v79SaveHistory(r);
+  }catch(v79Err){
+    raw.trace.push('고급판단 보조기능 오류(핵심 분석 계속): '+v79Err.message);
+    r.v79={state:'기본분석',next:'고급 판단 재계산',alignment:{score:0,text:'--'},breakout:{score:0,confirmed:false,text:'--'},rr:{rr1:null,label:'--'}};
+    r.compositeScore=Math.round((r.trendScore+r.entryScore)/2); r.signalHistory=[];
+  }
+  try{
+    v80UpdateOutcomes(r); r.performanceHistory=v80RecordSignal(r);
+  }catch(perfErr){
+    r.performanceHistory=[]; raw.trace.push('성과검증 보조기능 오류(핵심 분석 계속): '+perfErr.message);
+  }
 
   scannerCache[type+':'+symbol]=r;
   return r;
 }
+
+function v81SetAnalysisVisible(ok){
+  let ids=['v81Levels','scanTF','v81DataDiagCard'];
+  ids.forEach(id=>{let el=$(id);if(el)el.style.display=ok?'':'none'});
+  document.querySelectorAll('#scanner .v81Optional').forEach(el=>el.style.display=ok?'':'none');
+}
+function v81Conn(msg,state='wait'){
+  let el=$('v81ConnDiag'); if(!el)return;
+  el.textContent=msg;
+  el.className='v81DiagBox '+(state==='ok'?'v81DiagOK':state==='bad'?'v81DiagBad':'');
+}
 function renderScannerResult(r){
   scannerCurrent=r;
+  v81SetAnalysisVisible(true); v81Conn(`${r.source} 연결 성공 · ${r.meta?.name||r.symbol} · ${fmtPx(r.price)}`,'ok');
   let meta=r.meta||assetMeta(r.symbol,r.type);
   $('scanName').textContent=meta.name+' · '+r.symbol;
   if($('assetDisplayName')) $('assetDisplayName').textContent=meta.name;
@@ -1823,6 +1909,7 @@ function renderScannerResult(r){
 
 function clearScannerResult(symbol,type,msg){
   scannerCurrent=null;
+  v81SetAnalysisVisible(false);
   let meta=assetMeta(normalizeSymbol(symbol,type),type);
   $('scanName').textContent=meta.name+' · '+meta.symbol;
   if($('assetDisplayName')) $('assetDisplayName').textContent=meta.name;
@@ -1866,6 +1953,7 @@ async function scanAsset(){
   let type=$('scanType').value,symbol=normalizeSymbol($('scanSymbol').value,type); $('scanSymbol').value=symbol;
   $('scannerSource').textContent='분석 중'; $('scannerSource').className='scannerBadge srcWARN';
   $('scannerTrace').textContent='데이터 연결 경로를 확인하고 있습니다...';
+  v81Conn(type==='crypto'?'Binance 공개 엔드포인트를 순차 확인 중...':'주식 릴레이/보조경로를 확인 중...','wait');
   $('scannerFresh').textContent='연결 확인'; $('scannerFresh').className='scannerBadge srcWARN';
   // 선택 종목을 먼저 반영하여 직전 BTC 결과와 혼동 방지
   $('scanName').textContent=symbol+' · 연결 확인 중';
@@ -1877,19 +1965,21 @@ async function scanAsset(){
       $('scannerFresh').className='scannerBadge '+(r.relayAgeMin<30?'srcOK':'srcWARN');
     }
   }catch(e){
-    clearScannerResult(symbol,type,'분석 실패: '+e.message+'<br>이전 종목 결과는 제거했습니다.');
+    clearScannerResult(symbol,type,'분석 실패: '+e.message+'<br>핵심 데이터가 확보되지 않아 신호 생성을 중단했습니다.');
     $('scannerSource').textContent='데이터 실패'; $('scannerSource').className='scannerBadge srcWARN';
     $('scannerFresh').textContent='신호 중지'; $('scannerFresh').className='scannerBadge srcWARN';
-    $('scannerTrace').textContent=e.message;
+    let tr=(e.cryptoTrace||[]);
+    $('scannerTrace').innerHTML=(tr.length?tr.join('<br>')+'<br>':'')+'<b>최종 오류</b>: '+e.message;
+    v81Conn((type==='crypto'?'Binance 연결 실패 · ':'데이터 연결 실패 · ')+e.message,'bad');
   }
 }
 function quickScan(symbol,type){$('scanType').value=type;$('scanSymbol').value=symbol;scanAsset()}
 function addCurrentToWatch(){
   let type=$('scanType').value,symbol=normalizeSymbol($('scanSymbol').value,type);
   if(!scannerWatch.some(x=>x.symbol===symbol&&x.type===type))scannerWatch.push({symbol,type});
-  localStorage.setItem('v80watch',JSON.stringify(scannerWatch));renderWatchlist();
+  localStorage.setItem('v81watch',JSON.stringify(scannerWatch));renderWatchlist();
 }
-function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v80watch',JSON.stringify(scannerWatch));renderWatchlist()}
+function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v81watch',JSON.stringify(scannerWatch));renderWatchlist()}
 
 function watchSignalClass(s){
   s=String(s||'');
@@ -1992,9 +2082,9 @@ function runBacktest(){
   $('btTable').innerHTML='<tr><th>날짜</th><th>가격</th><th>액션</th><th>수량</th><th>Gross</th><th>수수료</th><th>펀딩</th><th>Net</th><th>실현누적</th></tr>'+events.slice(-30).reverse().map(x=>`<tr><td>${x[0]}</td><td>$${Math.round(x[1]).toLocaleString()}</td><td>${x[2]}</td><td>${x[3].toFixed(2)}</td><td>${x[4].toFixed(0)}</td><td>${x[5].toFixed(0)}</td><td>${x[6].toFixed(0)}</td><td>${x[7].toFixed(0)}</td><td>${x[8].toFixed(0)}</td></tr>`).join('');
   drawEquityCurve(curve)
 }
-function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v80log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v80log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
-function clearLog(){localStorage.removeItem('v80log');renderLog();decide()}
-function renderLog(){let log=JSON.parse(localStorage.getItem('v80log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
+function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v81log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v81log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
+function clearLog(){localStorage.removeItem('v81log');renderLog();decide()}
+function renderLog(){let log=JSON.parse(localStorage.getItem('v81log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
 
 function openTab(id,btn){
   document.querySelectorAll('.tabPane').forEach(x=>x.classList.remove('activePane'));
