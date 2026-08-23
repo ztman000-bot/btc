@@ -26,11 +26,17 @@ FEEDS = [
 BULL = ['inflow','approval','approve','rally','surge','breakout','record high','adoption','buy','bull','easing','rate cut','cuts rates','liquidity','stimulus']
 BEAR = ['outflow','hack','selloff','crash','drop','plunge','ban','lawsuit','liquidation','recession','inflation','war','tariff','risk-off','rate hike','higher yields']
 RISK = ['war','iran','israel','russia','ukraine','tariff','inflation','fed','yield','hack','liquidation','regulation','sec','recession','oil']
+ERROR_MARKERS = ['error 500','server error','that’s an error','that\'s an error','please try again later','all we know','service unavailable','bad gateway']
 
 
 def clean(s):
     s = html.unescape(re.sub('<[^>]+>', ' ', s or ''))
     return re.sub(r'\s+', ' ', s).strip()
+
+
+def bad_text(s):
+    t = clean(s).lower()
+    return (not t) or any(x in t for x in ERROR_MARKERS)
 
 
 def published(entry):
@@ -62,29 +68,36 @@ def impact_for(text):
 
 
 def translate_many(texts):
+    # Translation is optional. Any translator outage/error page must never enter the briefing.
     if not GoogleTranslator:
         return texts
     out = []
-    tr = GoogleTranslator(source='auto', target='ko')
-    for t in texts:
+    try:
+        tr = GoogleTranslator(source='auto', target='ko')
+    except Exception:
+        return texts
+    for original in texts:
+        translated = original
         try:
-            out.append(clean(tr.translate(t)) or t)
-            time.sleep(0.12)
+            candidate = clean(tr.translate(original))
+            if candidate and not bad_text(candidate) and len(candidate) <= max(500, len(original) * 8):
+                translated = candidate
+            time.sleep(0.15)
         except Exception:
-            out.append(t)
+            translated = original
+        out.append(translated)
     return out
 
 
 def collect():
-    rows = []
-    seen = set()
+    rows, seen = [], set()
     for source, url, typ in FEEDS:
         try:
-            f = feedparser.parse(url, request_headers={'User-Agent':'Mozilla/5.0 BTC-Hedge-Brief/1.0'})
+            f = feedparser.parse(url, request_headers={'User-Agent':'Mozilla/5.0 BTC-Hedge-Brief/1.1'})
             for e in f.entries[:20]:
                 title = clean(getattr(e, 'title', ''))
                 link = getattr(e, 'link', '')
-                if not title or not link: continue
+                if not title or not link or bad_text(title): continue
                 key = re.sub(r'[^a-z0-9가-힣]+','',title.lower())[:90]
                 if key in seen: continue
                 seen.add(key)
@@ -98,8 +111,7 @@ def collect():
 
 
 def score_rows(rows):
-    score = 50.0
-    risk_hits = 0
+    score, risk_hits = 50.0, 0
     for r in rows[:30]:
         t = r['title'].lower()
         score += 1.8 * sum(k in t for k in BULL)
@@ -118,8 +130,9 @@ def main():
     kos = translate_many([r['title'] for r in chosen])
     briefs = []
     for r, ko in zip(chosen, kos):
+        safe_ko = r['title'] if bad_text(ko) else ko
         briefs.append({
-            'titleKo': ko,
+            'titleKo': safe_ko,
             'titleOriginal': r['title'],
             'source': r['source'],
             'url': r['url'],
@@ -131,25 +144,23 @@ def main():
     pos = [b for b in briefs if b['impact']=='긍정']
     neg = [b for b in briefs if b['impact']=='부정']
     neutral = [b for b in briefs if b['impact']=='중립']
-    top = briefs[:5]
-    consensus = [b['titleKo'] for b in top]
-    risks = [b['titleKo'] for b in neg[:4]] or ['헤드라인 기반 리스크 신호가 뚜렷하지 않습니다.']
+    consensus = [b['titleKo'] for b in briefs[:5] if not bad_text(b['titleKo'])]
+    risks = [b['titleKo'] for b in neg[:4] if not bad_text(b['titleKo'])] or ['헤드라인 기반 리스크 신호가 뚜렷하지 않습니다.']
     headline = ('위험선호 우위' if score >= 60 else '위험회피 우위' if score <= 40 else '혼조/중립') + f' · 무료 공개소스 {len(rows)}건을 자동 집계한 헤드라인 기반 브리핑입니다.'
     gen = datetime.now(KST).isoformat(timespec='seconds')
-    source_objs=[]
-    used=set()
+    source_objs, used = [], set()
     for b in briefs:
         if b['source'] in used: continue
         used.add(b['source']); source_objs.append({'name':b['source'],'url':b['url']})
     global_doc={
-        'schemaVersion':'1.0','generatedAt':gen,'method':'free-rss-headline-aggregation',
+        'schemaVersion':'1.1','generatedAt':gen,'method':'free-rss-headline-aggregation',
         'marketScore':score,'riskLevel':risk,'headline':headline,
         'coverage':{'items':len(rows),'positive':len(pos),'negative':len(neg),'neutral':len(neutral)},
         'expertBriefings':briefs,'sources':source_objs,
-        'note':'무료 공개 RSS/뉴스/커뮤니티 헤드라인을 자동 수집하고 가능한 경우 한국어로 번역합니다. 투자판단의 단독 근거로 사용하지 마세요.'
+        'note':'무료 공개 RSS/뉴스/커뮤니티 헤드라인을 자동 수집합니다. 번역 서비스 오류 시 원문 제목으로 안전하게 대체합니다.'
     }
     brief_doc={
-        'schemaVersion':'1.1','date':datetime.now(KST).date().isoformat(),'generatedAt':gen,
+        'schemaVersion':'1.2','date':datetime.now(KST).date().isoformat(),'generatedAt':gen,
         'externalScore':score,'riskLevel':risk,'headline':headline,
         'globalConsensus':consensus,
         'risks':risks,
