@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BTC Hedge Assistant Learning Dataset",
+  "type": "object",
+  "required": ["schemaVersion", "exportedAt", "records"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "exportedAt": {"type": "string"},
+    "appVersion": {"type": "string"},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "ts", "kind", "symbol", "type", "price"],
+        "properties": {
+          "id": {"type": "string"},
+          "ts": {"type": "integer"},
+          "kind": {"enum": ["scanner_signal", "manual_execution"]},
+          "symbol": {"type": "string"},
+          "type": {"enum": ["crypto", "us", "kr", "btc"]},
+          "source": {"type": ["string", "null"]},
+          "price": {"type": "number"},
+          "signal": {"type": ["string", "null"]},
+          "state": {"type": ["string", "null"]},
+          "trendScore": {"type": ["number", "null"]},
+          "entryScore": {"type": ["number", "null"]},
+          "timeframes": {"type": "object"},
+          "outcomes": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}
