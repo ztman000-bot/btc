@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#0b1118"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v8.3.3</title>
+<title>BTC Hedge Assistant v8.4.0</title>
 <style>
 :root{
   --bg:#0b1118;--panel:#111923;--panel2:#0d151f;--line:#27323f;--grid:#263241;
@@ -299,7 +299,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 </head>
 <body>
 <header>
-  <div class="row"><div><h1>BTC Hedge Assistant v8.3.3</h1><div class="sub">Hedge Desk + Scanner · 주식랭킹 수정 · 신선도 보정 · 진단 간소화</div></div><span id="liveState" class="pill">연결중</span></div>
+  <div class="row"><div><h1>BTC Hedge Assistant v8.4.0</h1><div class="sub">Hedge Desk + Scanner · 주식랭킹 수정 · 신선도 보정 · 진단 간소화</div></div><span id="liveState" class="pill">연결중</span></div>
 </header>
 
 <main>
@@ -454,7 +454,7 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
   
   <div id="scanner" class="tabPane card">
     <div class="row"><b>Market Trend Scanner v2.3.1</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
-    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.3.3은 최신 Yahoo 데이터 성공 시 오래된 릴레이 판정을 해제하고, 데이터 신선도를 랭킹에 합리적으로 반영합니다.</div>
+    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.4.0은 최신 Yahoo 데이터 성공 시 오래된 릴레이 판정을 해제하고, 데이터 신선도를 랭킹에 합리적으로 반영합니다.</div>
     <div class="grid2" style="margin-top:9px">
       <div class="field"><label>자산 종류</label><select id="scanType"><option value="crypto">코인 (Binance)</option><option value="us">미국주식</option><option value="kr">국내주식</option></select></div>
       <div class="field"><label>티커/심볼 또는 종목명</label>
@@ -1114,7 +1114,7 @@ function drawEquityCurve(curve){
 function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0,feeRate:0.04,fundingRate:0.01}}
 function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v831pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
 function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
-function savePos(){localStorage.setItem('v831pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v831positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V8.3.3 설정 저장 완료')}
+function savePos(){localStorage.setItem('v831pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v831positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V8.4.0 설정 저장 완료')}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
 function v82MrEstimate(P,d){
   if(!market.price||!d.mr)return null;
@@ -2247,7 +2247,7 @@ function renderRankCategory(cat){
 
 function enableNotifications(){if(!('Notification'in window)){alert('이 브라우저는 알림을 지원하지 않습니다');return}Notification.requestPermission().then(x=>alert('알림 권한: '+x))}
 function notify(title,body){if('Notification'in window&&Notification.permission==='granted'){try{new Notification(title,{body,icon:'icon-192.png'})}catch(e){}}}
-function testNotification(){notify('BTC Hedge v8.3.3','알림 테스트입니다.')}
+function testNotification(){notify('BTC Hedge v8.4.0','알림 테스트입니다.')}
 function checkAlerts(){let d=pos(),p=market.price;if(d.alertHigh>0&&p>=d.alertHigh&&!alertState.high){notify('BTC 상단 가격 도달',`현재가 $${p.toFixed(1)} ≥ $${d.alertHigh}`);alertState.high=true}else if(p<d.alertHigh)alertState.high=false;if(d.alertLow>0&&p<=d.alertLow&&!alertState.low){notify('BTC 하단 가격 도달',`현재가 $${p.toFixed(1)} ≤ $${d.alertLow}`);alertState.low=true}else if(p>d.alertLow)alertState.low=false}
 
 function runBacktest(){
@@ -2338,7 +2338,8 @@ function v83GoTop(){
 })();
 
 </script>
-<script src="./learning.js?v=833" defer></script>
-<script src="./updater.js?v=833" defer></script>
+<script src="./learning.js?v=840" defer></script>
+<script src="./updater.js?v=840" defer></script>
+<script src="./dailybrief.js?v=840" defer></script>
 </body>
 </html>
