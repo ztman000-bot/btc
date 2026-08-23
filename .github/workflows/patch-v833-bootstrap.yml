@@ -1,4 +1,4 @@
-name: Patch V8.4.2 bootstrap
+name: Patch V8.5.0 bootstrap
 
 on:
   push:
@@ -21,21 +21,13 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'BTC Hedge Assistant v8\.(?:3\.[123]|4\.[01])', 'BTC Hedge Assistant v8.4.2', s)
-          for old in ['v8.4.0','V8.4.0','v8.4.1','V8.4.1']:
-              s=s.replace(old,'v8.4.2' if old.startswith('v') else 'V8.4.2')
-          s=re.sub(r'learning\.js\?v=\d+', 'learning.js?v=842', s)
-          s=re.sub(r'updater\.js\?v=\d+', 'updater.js?v=842', s)
-          s=re.sub(r'dailybrief\.js\?v=\d+', 'dailybrief.js?v=842', s)
-          s=re.sub(r'dailybrief-fix\.js\?v=\d+', 'dailybrief-fix.js?v=842', s)
-          if 'learning.js?v=842' not in s:
-              s=s.replace('</body>', '<script src="./learning.js?v=842" defer></script>\n</body>')
-          if 'updater.js?v=842' not in s:
-              s=s.replace('</body>', '<script src="./updater.js?v=842" defer></script>\n</body>')
-          if 'dailybrief.js?v=842' not in s:
-              s=s.replace('</body>', '<script src="./dailybrief.js?v=842" defer></script>\n</body>')
-          if 'dailybrief-fix.js?v=842' not in s:
-              s=s.replace('</body>', '<script src="./dailybrief-fix.js?v=842" defer></script>\n</body>')
+          s=re.sub(r'BTC Hedge Assistant v8\.(?:3\.[123]|4\.[0-2])', 'BTC Hedge Assistant v8.5.0', s)
+          for old in ['v8.4.0','V8.4.0','v8.4.1','V8.4.1','v8.4.2','V8.4.2']:
+              s=s.replace(old,'v8.5.0' if old.startswith('v') else 'V8.5.0')
+          for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=850', s)
+              if f'{name}.js?v=850' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=850" defer></script>\n</body>')
           if 'navigator.serviceWorker.register' not in s:
               inject='''<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
               s=s.replace('</body>', inject+'</body>')
@@ -47,5 +39,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch index bootstrap for V8.4.2"
+          git commit -m "Patch index bootstrap for V8.5.0"
           git push
