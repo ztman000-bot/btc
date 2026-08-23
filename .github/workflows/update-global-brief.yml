@@ -3,7 +3,7 @@ name: Update Global Brief
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 */2 * * *'
+    - cron: '17 */4 * * *'
 
 permissions:
   contents: write
