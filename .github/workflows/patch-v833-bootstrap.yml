@@ -1,4 +1,4 @@
-name: Patch V8.3.3 bootstrap
+name: Patch V8.4 bootstrap
 
 on:
   push:
@@ -18,17 +18,23 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('v8.3.1','v8.3.3').replace('V8.3.1','V8.3.3')
-          inject='''\n<script src="./learning.js?v=833" defer></script>\n<script src="./updater.js?v=833" defer></script>\n<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
+          s=re.sub(r'BTC Hedge Assistant v8\.3\.[123]', 'BTC Hedge Assistant v8.4.0', s)
+          s=s.replace('v8.3.3','v8.4.0').replace('V8.3.3','V8.4.0')
+          s=re.sub(r'learning\.js\?v=\d+', 'learning.js?v=840', s)
+          s=re.sub(r'updater\.js\?v=\d+', 'updater.js?v=840', s)
+          scripts='''\n<script src="./learning.js?v=840" defer></script>\n<script src="./updater.js?v=840" defer></script>\n<script src="./dailybrief.js?v=840" defer></script>\n'''
+          if 'learning.js?v=840' not in s:
+              s=s.replace('</body>', '<script src="./learning.js?v=840" defer></script>\n</body>')
+          if 'updater.js?v=840' not in s:
+              s=s.replace('</body>', '<script src="./updater.js?v=840" defer></script>\n</body>')
+          if 'dailybrief.js?v=840' not in s:
+              s=s.replace('</body>', '<script src="./dailybrief.js?v=840" defer></script>\n</body>')
           if 'navigator.serviceWorker.register' not in s:
+              inject='''<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
               s=s.replace('</body>', inject+'</body>')
-          else:
-              if 'learning.js?v=833' not in s:
-                  s=s.replace('</body>', '<script src="./learning.js?v=833" defer></script>\n</body>')
-              if 'updater.js?v=833' not in s:
-                  s=s.replace('</body>', '<script src="./updater.js?v=833" defer></script>\n</body>')
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit patch
@@ -37,5 +43,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch index bootstrap for V8.3.3"
+          git commit -m "Patch index bootstrap for V8.4"
           git push
