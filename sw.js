@@ -1,4 +1,4 @@
-const C='btc-hedge-v8-4-2-20260823',A=['./','./index.html','./learning.js','./updater.js','./dailybrief.js','./dailybrief-fix.js','./data/daily/brief.json','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const C='btc-hedge-v8-5-0-20260823',A=['./','./index.html','./learning.js','./updater.js','./dailybrief.js','./dailybrief-fix.js','./v850-shell.js','./data/daily/brief.json','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))]))});
 self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting()});
@@ -7,22 +7,18 @@ async function injectEnhancements(r){
   const ct=r.headers.get('content-type')||'';
   if(!ct.includes('text/html'))return r;
   let t=await r.text();
-  t=t.replace(/BTC Hedge Assistant v8\.(?:3\.[123]|4\.[01])/g,'BTC Hedge Assistant v8.4.2').replaceAll('V8.3.1','V8.4.2').replaceAll('V8.3.2','V8.4.2').replaceAll('V8.3.3','V8.4.2').replaceAll('V8.4.0','V8.4.2').replaceAll('V8.4.1','V8.4.2');
-  if(!t.includes('learning.js'))t=t.replace('</body>','<script src="./learning.js?v=842" defer></script></body>');
-  if(!t.includes('updater.js'))t=t.replace('</body>','<script src="./updater.js?v=842" defer></script></body>');
-  if(!t.includes('dailybrief.js'))t=t.replace('</body>','<script src="./dailybrief.js?v=842" defer></script></body>');
-  if(!t.includes('dailybrief-fix.js'))t=t.replace('</body>','<script src="./dailybrief-fix.js?v=842" defer></script></body>');
+  t=t.replace(/BTC Hedge Assistant v8\.(?:3\.[123]|4\.[0-2])/g,'BTC Hedge Assistant v8.5.0').replaceAll('V8.3.1','V8.5.0').replaceAll('V8.3.2','V8.5.0').replaceAll('V8.3.3','V8.5.0').replaceAll('V8.4.0','V8.5.0').replaceAll('V8.4.1','V8.5.0').replaceAll('V8.4.2','V8.5.0');
+  if(!t.includes('learning.js'))t=t.replace('</body>','<script src="./learning.js?v=850" defer></script></body>');
+  if(!t.includes('updater.js'))t=t.replace('</body>','<script src="./updater.js?v=850" defer></script></body>');
+  if(!t.includes('dailybrief.js'))t=t.replace('</body>','<script src="./dailybrief.js?v=850" defer></script></body>');
+  if(!t.includes('dailybrief-fix.js'))t=t.replace('</body>','<script src="./dailybrief-fix.js?v=850" defer></script></body>');
+  if(!t.includes('v850-shell.js'))t=t.replace('</body>','<script src="./v850-shell.js?v=850" defer></script></body>');
   return new Response(t,{status:r.status,statusText:r.statusText,headers:r.headers});
 }
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const isDoc=e.request.mode==='navigate'||e.request.destination==='document';
-  if(isDoc){
-    e.respondWith((async()=>{
-      try{const net=await fetch(e.request,{cache:'no-store'});const out=await injectEnhancements(net);const cp=out.clone();caches.open(C).then(c=>c.put(e.request,cp));return out}
-      catch(err){const cached=await caches.match(e.request)||await caches.match('./index.html');return cached?injectEnhancements(cached):Response.error()}
-    })());return;
-  }
+  if(isDoc){e.respondWith((async()=>{try{const net=await fetch(e.request,{cache:'no-store'});const out=await injectEnhancements(net);const cp=out.clone();caches.open(C).then(c=>c.put(e.request,cp));return out}catch(err){const cached=await caches.match(e.request)||await caches.match('./index.html');return cached?injectEnhancements(cached):Response.error()}})());return}
   const isFresh=e.request.destination==='script'||e.request.url.includes('/data/daily/brief.json');
   e.respondWith(fetch(e.request,{cache:isFresh?'no-store':'default'}).then(r=>{let cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));return r}).catch(()=>caches.match(e.request)));
 });
