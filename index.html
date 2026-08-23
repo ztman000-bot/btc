@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#0b1118"/>
 <link rel="manifest" href="manifest.webmanifest">
-<title>BTC Hedge Assistant v8.3</title>
+<title>BTC Hedge Assistant v8.3.1</title>
 <style>
 :root{
   --bg:#0b1118;--panel:#111923;--panel2:#0d151f;--line:#27323f;--grid:#263241;
@@ -282,10 +282,24 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 .v83ExecNote{margin-top:7px;padding:8px 9px;border:1px solid #30465b;border-radius:10px;background:#0a1520;font-size:11px;line-height:1.45;color:#b8c6d5}
 </style>
 
+
+<style>
+.v831DiagSummary{
+  margin-top:8px;padding:9px 10px;border:1px solid #2d4358;border-radius:11px;
+  background:#0a1520;font-size:11px;line-height:1.5;color:#b9c6d3
+}
+.v831DiagSummary b{color:#fff}
+.v831Fresh{color:#20d792}.v831Aged{color:#ffbf47}.v831Stale{color:#ff667a}
+.v831Trace details{margin-top:7px}
+.v831Trace summary{cursor:pointer;color:#9fb0c2;font-size:10px}
+.v831TraceBody{margin-top:6px;max-height:220px;overflow:auto;font-size:9px;line-height:1.45;color:#7f91a3;white-space:normal}
+.v831RankFresh{font-size:9px;color:#7f91a3}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row"><div><h1>BTC Hedge Assistant v8.3</h1><div class="sub">Hedge Desk + Scanner · 캔들기반 신호검증 · Top 버튼 · What-if</div></div><span id="liveState" class="pill">연결중</span></div>
+  <div class="row"><div><h1>BTC Hedge Assistant v8.3.1</h1><div class="sub">Hedge Desk + Scanner · 주식랭킹 수정 · 신선도 보정 · 진단 간소화</div></div><span id="liveState" class="pill">연결중</span></div>
 </header>
 
 <main>
@@ -439,8 +453,8 @@ footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 
   
   <div id="scanner" class="tabPane card">
-    <div class="row"><b>Market Trend Scanner v2.3</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
-    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.3은 신호 이후 실제 1H·4H·24H 캔들 종가로 성과를 검증합니다.</div>
+    <div class="row"><b>Market Trend Scanner v2.3.1</b><span id="scannerSource" class="scannerBadge srcWARN">데이터 대기</span></div>
+    <div class="small" style="margin-top:4px">보유 여부와 무관하게 코인·미국주식·국내주식을 분석합니다. V8.3.1은 최신 Yahoo 데이터 성공 시 오래된 릴레이 판정을 해제하고, 데이터 신선도를 랭킹에 합리적으로 반영합니다.</div>
     <div class="grid2" style="margin-top:9px">
       <div class="field"><label>자산 종류</label><select id="scanType"><option value="crypto">코인 (Binance)</option><option value="us">미국주식</option><option value="kr">국내주식</option></select></div>
       <div class="field"><label>티커/심볼 또는 종목명</label>
@@ -696,7 +710,7 @@ const $=id=>document.getElementById(id);
 let market={}, chartTF='4h', currentDecision={action:'WAIT',reason:'',qty:0,exec:false}, currentCrossIndex=null;
 let overlays={ema5:true,ma15:true,ema10:true,ema120:true,bb:true,st:true,cross:true,positions:true};
 let liveWS=null,klineWS=null,lastLiveTs=0,viewCount=100,viewOffset=0,dragStartX=null,dragStartOffset=0,pinchStartDist=null,pinchStartCount=null,showIndicatorPanels=true,lastDecisionSig='';
-let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerForceFresh=false,scannerWatch=JSON.parse(localStorage.getItem('v83watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v83positionUpdatedAt')||0);
+let alertState={high:false,low:false,lastAction:''};let scannerCurrent=null,scannerCache={},scannerForceFresh=false,scannerWatch=JSON.parse(localStorage.getItem('v831watch')||localStorage.getItem('v70watch')||'null')||[{symbol:'BTCUSDT',type:'crypto'},{symbol:'ETHUSDT',type:'crypto'},{symbol:'AAPL',type:'us'},{symbol:'NVDA',type:'us'},{symbol:'005930.KS',type:'kr'}];let positionUpdatedAt=+(localStorage.getItem('v831positionUpdatedAt')||0);
 
 function ema(a,n){let k=2/(n+1),r=[],v=a[0];for(let i=0;i<a.length;i++){v=i?a[i]*k+v*(1-k):a[i];r.push(v)}return r}
 function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
@@ -773,13 +787,13 @@ function toggleIndicatorPanels(){
 }
 function blockerHTML(items){return items.map(x=>`<span class="blocker ${x.sev||''}">${x.text}</span>`).join('')}
 function exportAll(){
-  let payload={version:'8.1',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v83log')||'[]')};
+  let payload={version:'8.1',exportedAt:new Date().toISOString(),settings:pos(),log:JSON.parse(localStorage.getItem('v831log')||'[]')};
   let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v83_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+  a.href=URL.createObjectURL(blob);a.download='btc_hedge_v831_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
 }
 function importAll(inp){
   let f=inp.files&&inp.files[0];if(!f)return;let r=new FileReader();
-  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v83pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v83log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
+  r.onload=()=>{try{let x=JSON.parse(r.result);if(x.settings)localStorage.setItem('v831pos',JSON.stringify(x.settings));if(x.log)localStorage.setItem('v831log',JSON.stringify(x.log));loadPos();renderLog();decide();updatePosStats();updateDistanceStats();renderMarginScenarios();buildLadder();drawChart();alert('가져오기 완료')}catch(e){alert('올바른 V6.4 백업 JSON이 아닙니다')}};r.readAsText(f)
 }
 
 function connectLive(){
@@ -844,7 +858,7 @@ function weightedConfidence(){
 }
 function liqDistancePct(d){return(!d.liq||!market.price)?999:Math.abs(d.liq-market.price)/market.price*100}
 function reserveLeft(d){return Math.max(0,2000-d.added)}
-function cooldownActive(){let log=JSON.parse(localStorage.getItem('v83log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
+function cooldownActive(){let log=JSON.parse(localStorage.getItem('v831log')||'[]');if(!log.length)return false;return Date.now()-log[0].ts < pos().coolHours*3600000}
 
 function decide(){
   if(!market.i4)return;
@@ -1022,7 +1036,7 @@ function estimateRiskEfficiency(){
 }
 function positionAgeMinutes(){return positionUpdatedAt?Math.floor((Date.now()-positionUpdatedAt)/60000):999999}
 function markPositionUpdated(){
-  positionUpdatedAt=Date.now();localStorage.setItem('v83positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
+  positionUpdatedAt=Date.now();localStorage.setItem('v831positionUpdatedAt',String(positionUpdatedAt));renderPositionFreshness();alert('현재 Binance 포지션 확인 시각을 저장했습니다')
 }
 function renderPositionFreshness(){
   let m=positionAgeMinutes(),fresh=m<=60,txt=!positionUpdatedAt?'포지션 확인 기록 없음':m<60?`${m}분 전 확인`:m<1440?`${Math.floor(m/60)}시간 전 확인`:`${Math.floor(m/1440)}일 전 확인`;
@@ -1098,9 +1112,9 @@ function drawEquityCurve(curve){
 }
 
 function defaultPos(){return{lq:2.05,le:94171.48,sq:2.10,se:62332.59,wallet:69936.30,liq:117088.72,mr:32.65,added:0,stepQty:.20,minSafe:15,hardSafe:8,maxNet:2,longTP:5,shortTP:5,coolHours:4,requireVol:0,planBuy:0,planSell:0,alertHigh:0,alertLow:0,feeRate:0.04,fundingRate:0.01}}
-function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v83pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
+function loadPos(){let d={...defaultPos(),...(JSON.parse(localStorage.getItem('v831pos')||'null')||{})};Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]})}
 function pos(){let d={};['lq','le','sq','se','wallet','liq','mr','added','stepQty','minSafe','hardSafe','maxNet','longTP','shortTP','coolHours','requireVol','planBuy','planSell','alertHigh','alertLow','feeRate','fundingRate'].forEach(k=>d[k]=+($(k)?.value||0));d.added=Math.min(2000,Math.max(0,d.added));return d}
-function savePos(){localStorage.setItem('v83pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v83positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V8.3 설정 저장 완료')}
+function savePos(){localStorage.setItem('v831pos',JSON.stringify(pos()));positionUpdatedAt=Date.now();localStorage.setItem('v831positionUpdatedAt',String(positionUpdatedAt));decide();updatePosStats();updateDistanceStats();renderMarginScenarios();renderNextAction();buildLadder();drawChart();alert('V8.3.1 설정 저장 완료')}
 function eqAt(P,d){return d.wallet+d.added+d.lq*(P-d.le)+d.sq*(d.se-P)}
 function v82MrEstimate(P,d){
   if(!market.price||!d.mr)return null;
@@ -1490,14 +1504,18 @@ function v79StateMachine(r){
 function v79Composite(r){
   let s=r.v79||v79StateMachine(r);
   let rr=Math.min(100,Math.max(0,(s.rr.rr1||0)*35));
-  if(r.isStale)return 0;
   let perf=v80ValidationScore(r);
-  let base=Number(r.trendScore||0)*0.25+
-    Number(r.entryScore||0)*0.24+
+  let base=Number(r.trendScore||0)*0.24+
+    Number(r.entryScore||0)*0.23+
     Number(s.alignment.score||0)*0.18+
-    Number(s.breakout.score||0)*0.13+
+    Number(s.breakout.score||0)*0.12+
     rr*0.10;
-  return Math.round(base+(perf==null?5:perf*0.10));
+  let perfPart=(perf==null?5:perf*0.08);
+  let fresh=Number.isFinite(Number(r.freshnessScore))?Number(r.freshnessScore):80;
+  let freshPart=fresh*0.05;
+  let score=Math.round(base+perfPart+freshPart);
+  if(r.isStale) score=Math.round(score*0.72);
+  return Math.max(0,Math.min(100,score));
 }
 
 function v80SignalDirection(r){
@@ -1895,8 +1913,17 @@ async function analyzeScannerSymbol(symbol,type){
   symbol=normalizeSymbol(symbol,type);
   let meta=assetMeta(symbol,type);
   let raw=type==='crypto'?await fetchCryptoScanner(symbol):await fetchYahooScanner(symbol);
-  raw.isStale=type!=='crypto'&&raw.relayAgeMin!=null&&raw.relayAgeMin>15;
+  let srcName=String(raw.source||'').toLowerCase();
+  let usedRelay=type!=='crypto' && (srcName.includes('relay') || srcName.includes('github stock'));
+  let usedYahooFresh=type!=='crypto' && (srcName.includes('yahoo live') || srcName.includes('yahoo direct') || srcName.includes('yahoo chart'));
+  raw.usedRelay=usedRelay;
+  raw.usedYahooFresh=usedYahooFresh;
+  raw.isStale=usedRelay && raw.relayAgeMin!=null && raw.relayAgeMin>15;
   raw.staleReason=raw.isStale?('릴레이 '+Math.round(raw.relayAgeMin)+'분 경과'):null;
+  raw.freshnessScore = type==='crypto' ? 100
+    : usedYahooFresh ? 100
+    : usedRelay && raw.relayAgeMin!=null ? Math.max(20,100-Math.max(0,raw.relayAgeMin-5)*2)
+    : 80;
 
   if(raw.symbol && raw.symbol!==symbol) throw new Error(`심볼 검증 실패: 요청 ${symbol} / 수신 ${raw.symbol}`);
   if(raw.companyName) meta.name=raw.companyName;
@@ -1962,6 +1989,26 @@ function v81SetAnalysisVisible(ok){
   ids.forEach(id=>{let el=$(id);if(el)el.style.display=ok?'':'none'});
   document.querySelectorAll('#scanner .v81Optional').forEach(el=>el.style.display=ok?'':'none');
 }
+
+function v831FreshLabel(r){
+  if(r.type==='crypto') return {text:'실시간 Binance',cls:'v831Fresh'};
+  if(r.usedYahooFresh) return {text:'최신 Yahoo',cls:'v831Fresh'};
+  if(r.isStale) return {text:'오래된 릴레이',cls:'v831Stale'};
+  if(r.usedRelay) return {text:'릴레이 정상',cls:'v831Aged'};
+  return {text:'외부 데이터',cls:'v831Aged'};
+}
+function v831DiagHtml(r){
+  let f=v831FreshLabel(r);
+  let age=(r.relayAgeMin!=null&&Number.isFinite(Number(r.relayAgeMin)))?Math.round(r.relayAgeMin)+'분':'--';
+  let c=r.counts||{};
+  let counts=`15M ${c.m15??c.t15??'--'} · 1H ${c.h1??c.t1??'--'} · 4H ${c.h4??c.t4??'--'} · 1D ${c.d1??c.td??'--'} · 1W ${c.w1??c.tw??'--'}`;
+  let generated=r.generatedAt?new Date(r.generatedAt).toLocaleString():'--';
+  return `<div class="v831DiagSummary">
+    <b>데이터 상태</b> · <span class="${f.cls}">${f.text}</span><br>
+    소스 ${r.source||'--'} · 갱신 ${generated}${r.usedRelay?' · 릴레이 나이 '+age:''}<br>
+    캔들 ${counts}
+  </div>`;
+}
 function v81Conn(msg,state='wait'){
   let el=$('v81ConnDiag'); if(!el)return;
   el.textContent=msg;
@@ -1988,6 +2035,16 @@ function renderScannerResult(r){
       $('scannerSource').className='scannerBadge srcWARN';
     }
     v81Conn('⚠ '+r.staleReason+' · 신규 진입 신호 차단 · 최신 데이터 재조회 필요','bad');
+  }
+  if(!r.isStale && r.usedYahooFresh){
+    if($('scannerFresh')){
+      $('scannerFresh').textContent='최신 Yahoo';
+      $('scannerFresh').className='scannerBadge srcOK';
+    }
+    if($('scannerSource')){
+      $('scannerSource').textContent='Yahoo 최신 데이터';
+      $('scannerSource').className='scannerBadge srcOK';
+    }
   }
   $('scanScoreRing').textContent=r.trendScore;
   $('scanScoreRing').style.borderColor=r.dir==='UP'?'#0ECB81':'#F6465D';
@@ -2033,7 +2090,7 @@ function renderScannerResult(r){
   $('entryScore').textContent=r.entryScore+'/100'; $('entryBar').style.width=r.entryScore+'%';
   $('scanSignal').textContent=r.signal; $('scanSignal').className='big '+r.cls;
   $('scanRegime').textContent=r.regime;
-  $('scanSetup').innerHTML=`<b>현재가 ${fmtPx(r.price)}</b> · 24h ${r.change>=0?'+':''}${r.change.toFixed(2)}%<br><b>${r.regime}</b> · ${r.signal}<br>${r.setup}`;
+  $('scanSetup').innerHTML=`<b>현재가 ${fmtPx(r.price)}</b> · ${r.type==='crypto'?'24h':'데이터기간'} ${r.change>=0?'+':''}${r.change.toFixed(2)}%<br><b>${r.regime}</b> · ${r.signal}<br>${r.setup}`;
   $('lvlPull1').textContent=fmtPx(r.levels.pull1); $('lvlPull2').textContent=fmtPx(r.levels.pull2);
   $('lvlBreak').textContent=fmtPx(r.levels.breakout); $('lvlInvalid').textContent=fmtPx(r.levels.invalid);
   $('lvlTarget1').textContent=fmtPx(r.levels.target1); $('lvlTarget2').textContent=fmtPx(r.levels.target2);
@@ -2042,9 +2099,8 @@ function renderScannerResult(r){
   let ageTxt=(r.relayAgeMin!=null)?(r.relayAgeMin<1?'1분 미만':Math.round(r.relayAgeMin)+'분 전'):'방금 갱신';
   $('scannerFresh').textContent=(r.dataQuality?('품질 '+r.dataQuality+' · '):'')+ageTxt;
   $('scannerFresh').className='scannerBadge '+(r.dataQuality==='낮음'?'srcWARN':'srcOK');
-  $('scannerTrace').innerHTML=(r.trace||[]).join('<br>')
-    +(r.counts?`<br><b>검증 완료</b>: 15M ${r.counts.m15} · 1H ${r.counts.h1} · 4H ${r.counts.h4} · 1D ${r.counts.d1} · 1W ${r.counts.w1}`:'')
-    +(r.relayUrl?'<br><b>최종 사용 경로</b>: '+r.relayUrl:'');
+  $('scannerTrace').innerHTML=v831DiagHtml(r)+
+    `<div class="v831Trace"><details><summary>전체 연결 로그 보기</summary><div class="v831TraceBody">${(r.trace||[]).join('<br>')||'로그 없음'}</div></details></div>`;
 }
 
 function clearScannerResult(symbol,type,msg){
@@ -2117,9 +2173,9 @@ function quickScan(symbol,type){$('scanType').value=type;$('scanSymbol').value=s
 function addCurrentToWatch(){
   let type=$('scanType').value,symbol=normalizeSymbol($('scanSymbol').value,type);
   if(!scannerWatch.some(x=>x.symbol===symbol&&x.type===type))scannerWatch.push({symbol,type});
-  localStorage.setItem('v83watch',JSON.stringify(scannerWatch));renderWatchlist();
+  localStorage.setItem('v831watch',JSON.stringify(scannerWatch));renderWatchlist();
 }
-function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v83watch',JSON.stringify(scannerWatch));renderWatchlist()}
+function removeWatch(i){scannerWatch.splice(i,1);localStorage.setItem('v831watch',JSON.stringify(scannerWatch));renderWatchlist()}
 
 function watchSignalClass(s){
   s=String(s||'');
@@ -2149,7 +2205,7 @@ function renderWatchlist(){
     return `<div class="watchCard" onclick="quickScan('${sym}','${w.type}')">
       <div class="watchTop">
         <div><div class="watchName">${meta.name}</div><div class="watchSub">${sym} · ${meta.market}</div></div>
-        <div><div class="watchPrice">${watchPriceText(r)}</div><div class="watchChange ${cls}">${cht}</div></div>
+        <div><div class="watchPrice">${watchPriceText(r)}</div><div class="watchChange ${cls}">${r?(r.type==='crypto'?'24h ':'기간 '):''}${cht}</div></div>
       </div>
       <div class="watchMeta">
         <span class="watchBadge ${watchSignalClass(sig)}">${sig}</span>
@@ -2175,7 +2231,7 @@ function renderV79Ranking(){
     let m=r.meta||assetMeta(r.symbol,r.type), s=r.v79||v79StateMachine(r), score=r.compositeScore??v79Composite(r);
     return `<div class="v79Rank">
       <span><b>#${i+1} ${m.name}</b><br><span class="v79Small">${r.symbol} · ${s.state}<br>${s.alignment.text}</span></span>
-      <span style="text-align:right"><span class="v79RankScore">${score}</span><br><span class="v79Small">T${r.trendScore} E${r.entryScore} · RR ${s.rr.rr1? s.rr.rr1.toFixed(2):'--'}</span></span>
+      <span style="text-align:right"><span class="v79RankScore">${score}</span><br><span class="v79Small">T${r.trendScore} E${r.entryScore} · RR ${s.rr.rr1? s.rr.rr1.toFixed(2):'--'}<br><span class="v831RankFresh">신선도 ${Math.round(r.freshnessScore??80)}/100</span></span></span>
     </div>`;
   }).join(''):'분석 가능한 관심종목이 없습니다.';
 }
@@ -2191,7 +2247,7 @@ function renderRankCategory(cat){
 
 function enableNotifications(){if(!('Notification'in window)){alert('이 브라우저는 알림을 지원하지 않습니다');return}Notification.requestPermission().then(x=>alert('알림 권한: '+x))}
 function notify(title,body){if('Notification'in window&&Notification.permission==='granted'){try{new Notification(title,{body,icon:'icon-192.png'})}catch(e){}}}
-function testNotification(){notify('BTC Hedge v8.3','알림 테스트입니다.')}
+function testNotification(){notify('BTC Hedge v8.3.1','알림 테스트입니다.')}
 function checkAlerts(){let d=pos(),p=market.price;if(d.alertHigh>0&&p>=d.alertHigh&&!alertState.high){notify('BTC 상단 가격 도달',`현재가 $${p.toFixed(1)} ≥ $${d.alertHigh}`);alertState.high=true}else if(p<d.alertHigh)alertState.high=false;if(d.alertLow>0&&p<=d.alertLow&&!alertState.low){notify('BTC 하단 가격 도달',`현재가 $${p.toFixed(1)} ≤ $${d.alertLow}`);alertState.low=true}else if(p>d.alertLow)alertState.low=false}
 
 function runBacktest(){
@@ -2228,9 +2284,9 @@ function runBacktest(){
   $('btTable').innerHTML='<tr><th>날짜</th><th>가격</th><th>액션</th><th>수량</th><th>Gross</th><th>수수료</th><th>펀딩</th><th>Net</th><th>실현누적</th></tr>'+events.slice(-30).reverse().map(x=>`<tr><td>${x[0]}</td><td>$${Math.round(x[1]).toLocaleString()}</td><td>${x[2]}</td><td>${x[3].toFixed(2)}</td><td>${x[4].toFixed(0)}</td><td>${x[5].toFixed(0)}</td><td>${x[6].toFixed(0)}</td><td>${x[7].toFixed(0)}</td><td>${x[8].toFixed(0)}</td></tr>`).join('');
   drawEquityCurve(curve)
 }
-function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v83log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v83log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
-function clearLog(){localStorage.removeItem('v83log');renderLog();decide()}
-function renderLog(){let log=JSON.parse(localStorage.getItem('v83log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
+function recordAction(){if(!market.price)return;let log=JSON.parse(localStorage.getItem('v831log')||'[]');log.unshift({ts:Date.now(),time:new Date().toLocaleString(),price:market.price,action:currentDecision.action,reason:currentDecision.reason,qty:currentDecision.qty,execState:currentDecision.execState});localStorage.setItem('v831log',JSON.stringify(log.slice(0,50)));renderLog();decide()}
+function clearLog(){localStorage.removeItem('v831log');renderLog();decide()}
+function renderLog(){let log=JSON.parse(localStorage.getItem('v831log')||'[]');$('logBody').innerHTML=log.length?log.slice(0,12).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #243142"><b>${x.time}</b> · $${Math.round(x.price).toLocaleString()}<br>${x.action}${x.qty?` ${x.qty.toFixed(2)} BTC`:''}${x.execState?` · ${x.execState}`:''}<br><span class=tiny>${x.reason}</span></div>`).join(''):'아직 실행 기록이 없습니다.'}
 
 function openTab(id,btn){
   document.querySelectorAll('.tabPane').forEach(x=>x.classList.remove('activePane'));
