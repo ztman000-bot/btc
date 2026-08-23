@@ -15,7 +15,7 @@
   const appVersion=()=>document.title.match(/v([0-9.]+)/i)?.[1]||'8.3.2';
   const tfSnap=t=>({bias:num(t?.bias),rsi:num(t?.rsi),adx:num(t?.adx),stochK:num(t?.stochK??t?.k),stochD:num(t?.stochD??t?.d),volumeRatio:num(t?.volRatio??t?.vr)});
   const sourceOf=r=>safeText(r?.source||r?.src||r?.provider||r?.meta?.source||null);
-  const directionFrom=r=>{try{if(typeof v80SignalDirection==='function')return safeText(v80SignalDirection(r));}catch(e){}const s=String(r?.v79?.state||r?.signal||r?.action||'').toLowerCase();if(/buy|long|상승|매수|진입/.test(s))return'UP';if(/sell|short|하락|매도|축소/.test(s))return'DOWN';return'WAIT';};
+  const directionFrom=r=>{try{if(typeof v80SignalDirection==='function'){const d=Number(v80SignalDirection(r));if(d>0)return'UP';if(d<0)return'DOWN';if(d===0)return'WAIT';}}catch(e){}const s=String(r?.v79?.state||r?.signal||r?.action||'').toLowerCase();if(/buy|long|상승|매수|진입/.test(s))return'UP';if(/sell|short|하락|매도|축소/.test(s))return'DOWN';return'WAIT';};
   const stateOf=r=>safeText(r?.v79?.state||r?.state||r?.signal||'--');
   const normalizedType=t=>['crypto','us','kr'].includes(t)?t:'crypto';
 
