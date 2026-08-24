@@ -1,4 +1,4 @@
-/* BTC Hedge Assistant v8.4.1 - Daily brief tab activation fix */
+/* BTC Hedge Assistant v8.7.0 - Daily brief activation + strategy module loader */
 (()=>{
 'use strict';
 function pane(){return document.getElementById('dailyBriefPane')}
@@ -22,6 +22,17 @@ function hideBrief(){
   p.style.display='none';
   b?.classList.remove('active');
 }
+function loadScript(src,id){
+  if(document.getElementById(id))return;
+  const s=document.createElement('script');
+  s.id=id;s.src=src;s.async=false;
+  s.onerror=()=>console.warn('module load failed',src);
+  document.head.appendChild(s);
+}
+function loadStrategyModules(){
+  loadScript('./strategy-lab.js?v=870','strategyLabModule');
+  loadScript('./strategy-position.js?v=870','strategyPositionModule');
+}
 // Capture first so legacy delegated tab handlers cannot consume the dynamic tab.
 document.addEventListener('click',e=>{
   const t=e.target?.closest?.('button');
@@ -39,8 +50,9 @@ document.addEventListener('click',e=>{
 // Re-bind after dynamic creation and app rerenders.
 const mo=new MutationObserver(()=>{
   const b=btn();
-  if(b && !b.dataset.v841){b.dataset.v841='1';b.setAttribute('type','button')}
+  if(b && !b.dataset.v870){b.dataset.v870='1';b.setAttribute('type','button')}
 });
 if(document.documentElement)mo.observe(document.documentElement,{subtree:true,childList:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadStrategyModules,{once:true});else loadStrategyModules();
 window.BTCDailyBriefFix={show:showBrief,hide:hideBrief};
 })();
