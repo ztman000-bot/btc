@@ -1,7 +1,7 @@
-/* BTC Hedge Assistant v8.7.1 - canonical version guard */
+/* BTC Hedge Assistant v8.7.2 - canonical version guard */
 (()=>{
 'use strict';
-const VERSION='8.7.1';
+const VERSION='8.7.2';
 let fixing=false;
 function patch(){
  if(fixing)return;fixing=true;
