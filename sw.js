@@ -1,4 +1,4 @@
-const C='btc-hedge-v8-7-1-20260824';
+const C='btc-hedge-v8-7-2-20260824';
 const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
 const JSONS=['/data/daily/brief.json','/data/daily/global.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C))});
