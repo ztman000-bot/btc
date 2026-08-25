@@ -7,12 +7,14 @@ const num=v=>Number.isFinite(Number(v))?Number(v):null;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let result=null,last=null;
+function getMarket(){try{return typeof market!=='undefined'?market:(window.market||{})}catch(e){return window.market||{}}}
+function getPos(){try{return typeof pos==='function'?pos():(typeof window.pos==='function'?window.pos():null)}catch(e){return null}}
 function loadState(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
 function saveState(x){try{localStorage.setItem(KEY,JSON.stringify(x))}catch(e){}}
 function ema(vals,p){if(!vals?.length)return null;const k=2/(p+1);let e=Number(vals[0]);for(let i=1;i<vals.length;i++)e=Number(vals[i])*k+e*(1-k);return e}
 function closes(rows){return (rows||[]).map(r=>Array.isArray(r)?Number(r[4]):Number(r?.close??r?.c)).filter(Number.isFinite)}
 function trend(){
- const h=closes(window.market?.h4),d=closes(window.market?.d1),p=num(window.market?.price);
+ const m=getMarket(),h=closes(m?.h4),d=closes(m?.d1),p=num(m?.price);
  if(!p||h.length<55||d.length<25)return {ready:false};
  const h20=ema(h.slice(-80),20),h50=ema(h.slice(-100),50),d10=ema(d.slice(-50),10),d20=ema(d.slice(-60),20);
  const bull4=p>h20&&h20>h50,bear4=p<h20&&h20<h50,bullD=p>d10&&d10>d20,bearD=p<d10&&d10<d20;
@@ -20,11 +22,11 @@ function trend(){
 }
 function fmt(v,d=2){return Number.isFinite(Number(v))?Number(v).toLocaleString(undefined,{maximumFractionDigits:d}):'--'}
 function pct(v){return Number.isFinite(v)?v.toFixed(1)+'%':'--'}
-function baseQty(pos){const s=loadState(),q=num(pos?.sq)||0;if(!s.baseShortQty&&q>0){s.baseShortQty=q;s.baseSetAt=Date.now();saveState(s)}return num(s.baseShortQty)||q}
-function resetBase(){try{const d=window.pos?.();if(!d?.sq)return;const s=loadState();s.baseShortQty=Number(d.sq);s.baseSetAt=Date.now();saveState(s);render()}catch(e){}}
+function baseQty(p){const s=loadState(),q=num(p?.sq)||0;if(!s.baseShortQty&&q>0){s.baseShortQty=q;s.baseSetAt=Date.now();saveState(s)}return num(s.baseShortQty)||q}
+function resetBase(){try{const d=getPos();if(!d?.sq)return;const s=loadState();s.baseShortQty=Number(d.sq);s.baseSetAt=Date.now();saveState(s);render()}catch(e){}}
 function liqDist(d,p){if(!d?.liq||!p)return 999;return Math.abs(p-d.liq)/p*100}
 function compute(){
- if(!result||typeof window.pos!=='function')return null;const d=window.pos(),t=trend(),p=num(window.market?.price);if(!d||!p||!t.ready)return null;
+ const d=getPos(),m=getMarket();if(!result||!d)return null;const t=trend(),p=num(m?.price);if(!p||!t.ready)return null;
  const cfg=result.config||{},par=result.selectedParams||result.hybrid?.params||{};const B=num(cfg.breakout)||80000,base=Math.max(.0001,baseQty(d)),sq=num(d.sq)||0,lq=num(d.lq)||0;
  const confirm=Math.max(1,Number(par.confirmBars)||2),h=t.h,accepted=h.length>=confirm&&h.slice(-confirm).every(x=>x>B);
  const rawRatio=clamp((4-(num(par.rawBreakTrim)??.5))/4,0,1),r4=clamp(Math.max(num(par.minStrongShort)??1,2.25)/4,0,1),rD=clamp(Math.max(num(par.minStrongShort)??1,1.5)/4,0,1),rStrong=clamp((num(par.minStrongShort)??1)/4,0,1);
@@ -37,8 +39,8 @@ function compute(){
  else if(p>B){state='BREAK_ONLY';label='돌파 확인 대기';target=Math.min(sq,base*rawRatio);reason='80K 위지만 추세 확인이 부족합니다. 본격 축소는 금지하고 백테스트상 허용된 소량 단계만 고려합니다.';severity='warn'}
  const step=num(d.stepQty)||num(par.trimStep)||.5,desired=Math.max(0,sq-target),qty=Math.min(step,desired),safe=liqDist(d,p);let exec=qty>1e-9,block=[];
  if(safe<(num(d.minSafe)||10)){exec=false;block.push('청산가 안전거리 부족')}
- let proj=lq-(sq-qty);if(num(d.maxNet)!=null&&Math.abs(proj)>Number(d.maxNet)){exec=false;block.push('축소 후 순노출 제한 초과')}
- try{const pf=window.positionFreshnessTier?.();if(pf?.limit){exec=false;block.push('포지션 입력값 최신성 부족')}}catch(e){}
+ const proj=lq-(sq-qty);if(num(d.maxNet)!=null&&Math.abs(proj)>Number(d.maxNet)){exec=false;block.push('축소 후 순노출 제한 초과')}
+ try{const pf=typeof positionFreshnessTier==='function'?positionFreshnessTier():window.positionFreshnessTier?.();if(pf?.limit){exec=false;block.push('포지션 입력값 최신성 부족')}}catch(e){}
  if(state==='STOP_TRIM'||state==='SHORT_PROFIT_ZONE'||state==='HOLD'){exec=false;qty=0}
  if(!result.guardrails?.ordersRemainManual){exec=false;block.push('백테스트 주문 가드 확인 필요')}
  const action=exec?`숏 ${qty.toFixed(2)} 축소 검토`:label;
