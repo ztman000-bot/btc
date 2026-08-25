@@ -2316,7 +2316,7 @@ function openTab(id,btn){
 window.addEventListener('resize',drawChart);
 
 loadPos();renderLog();renderWatchlist();renderPositionFreshness();connectLive();connectKline();refreshAll();setInterval(refreshAll,60000);setInterval(liveWatchdog,5000);setInterval(renderPositionFreshness,60000);
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js?v=8188',{updateViaCache:'none'}).then(r=>r.update());
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='scanSymbol')updateResolvedHint()});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='scanType')updateResolvedHint()});
 setTimeout(updateResolvedHint,0);
