@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/research_shadow.py'
+      - 'data/research/config.json'
+      - '.github/workflows/research-shadow.yml'
 
 permissions:
   contents: write
@@ -39,5 +45,6 @@ jobs:
             echo "No research changes"
           else
             git commit -m "research: update 24H shadow state"
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
