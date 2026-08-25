@@ -1,20 +1,13 @@
 name: Patch Current Bootstrap
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: btc-bootstrap-patch
-  cancel-in-progress: true
-
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,11 +21,6 @@ jobs:
           s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.8</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
               s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8188', s)
-              if f'{name}.js?v=8188' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8188" defer></script>\n</body>')
-          s=re.sub(r'<script[^>]*research-bootstrap\.js[^>]*></script>\s*','',s,flags=re.I)
-          s=re.sub(r'<script[^>]*research-shadow\.js[^>]*></script>\s*','',s,flags=re.I)
-          s=re.sub(r'<script\s+id=["\']btcResearchInline\d+["\'][^>]*>.*?</script>\s*','',s,flags=re.I|re.S)
           s=s.replace("navigator.serviceWorker.register('sw.js')","navigator.serviceWorker.register('sw.js?v=8188',{updateViaCache:'none'}).then(r=>r.update())")
           p.write_text(s,encoding='utf-8')
           PY
