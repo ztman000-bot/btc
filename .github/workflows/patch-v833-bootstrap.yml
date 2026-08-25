@@ -25,25 +25,48 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.5</title>', s)
+          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.6</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
-              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8185', s)
-              if f'{name}.js?v=8185' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8185" defer></script>\n</body>')
-          s=re.sub(r'<script[^>]*id=["\']btcResearchBootstrap\d+["\'][^>]*research-bootstrap\.js\?v=\d+[^>]*></script>\s*','',s)
-          s=re.sub(r'<script[^>]*id=["\']btcResearchShadow\d+["\'][^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s)
-          direct='<script id="btcResearchBootstrap8185" src="./research-bootstrap.js?v=8185" defer></script>\n'
-          s=s.replace('</body>', direct+'</body>')
-          if 'navigator.serviceWorker.register' not in s:
-              inject='''<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
-              s=s.replace('</body>', inject+'</body>')
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8186', s)
+              if f'{name}.js?v=8186' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=8186" defer></script>\n</body>')
+
+          # Remove all former Research external boot paths. V8.18.6 owns the card inline.
+          s=re.sub(r'<script[^>]*research-bootstrap\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
+          s=re.sub(r'<script[^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
+          s=re.sub(r'<script\s+id=["\']btcResearchInline\d+["\'][^>]*>.*?</script>\s*','',s,flags=re.I|re.S)
+
+          inline=r'''<script id="btcResearchInline8186">
+(()=>{'use strict';
+const V='8.18.6',$=id=>document.getElementById(id);let LAST=null,ERR='';
+const money=x=>Number.isFinite(Number(x))?'$'+Math.round(Number(x)).toLocaleString():'--';
+const pct=x=>Number.isFinite(Number(x))?(Number(x)*100).toFixed(1)+'%':'--';
+function home(){return $('v850HomePane')||document.querySelector('main>.v853Active')||document.querySelector('main')}
+function label(id){return({HOLD:'관망',SHORT_0.025:'숏 0.025 축소',SHORT_0.050:'숏 0.050 축소',LONG_0.025:'롱 0.025 축소',LONG_0.050:'롱 0.050 축소',EXIT_ALL:'양 포지션 전량종료'})[id]||id||'--'}
+function age(ts){if(!ts)return'시각 없음';const m=(Date.now()-new Date(ts).getTime())/60000;if(m<2)return'방금 갱신';if(m<120)return Math.round(m)+'분 전';return(m/60).toFixed(1)+'시간 전'}
+function card(){let c=$('researchShadowCard');if(!c){c=document.createElement('div');c.id='researchShadowCard';c.className='card'}const p=home();if(!p)return c;const a=$('nextNow')?.closest('.nextActionCard')||$('v853DecisionSummary')?.closest('.card');if(c.parentElement!==p){if(a&&a.parentElement===p)a.insertAdjacentElement('afterend',c);else p.insertBefore(c,p.firstChild||null)}else if(a&&a.parentElement===p&&a.nextElementSibling!==c){a.insertAdjacentElement('afterend',c)}c.classList.remove('v853Page','v852Page','v851Page','tabPane');c.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0 0 10px 0!important;position:relative!important;z-index:2!important';return c}
+function render(){const c=card();if(!c)return;const d=LAST;if(!d){c.innerHTML=`<div class="row"><div><b>🛰️ 24H Research & Shadow</b><div class="small">24시간 서버 연구 · 실거래 없음</div></div><span class="badge">v${V}</span></div><div class="warnbox"><b>${ERR?'⚠️ 연구 데이터 연결 실패':'🟡 연구 데이터 불러오는 중'}</b><br>${ERR||'GitHub 서버 연구 결과를 직접 읽고 있습니다.'}</div>`;return}const t=d.terminalWallet||{},sh=d.shadow||{},mc=d.monteCarlo||{},op=d.optimizer||{},ms=d.marketStructure||{},exe=t.executable||{},best=t.modelBest||{};const fresh=d.generatedAt&&(Date.now()-new Date(d.generatedAt).getTime())<45*60000;c.innerHTML=`<div class="row"><div><b>🛰️ 24H Research & Shadow</b><div class="small">앱을 꺼도 서버 연구 지속 · 주문 없음</div></div><span class="badge">v${V}</span></div><div class="${fresh?'okbox':'warnbox'}"><b>${fresh?'✅ 서버 연구 정상':'🟡 서버 연구 데이터 지연'}</b> · ${age(d.generatedAt)}<br>실행판정 <b>${label(exe.id)}</b> · 모델 1위 ${label(best.id)}</div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">Shadow 표본</div><b>${sh.samples??0}회</b><div class="tiny">Forward ${sh.directionalEvaluations??0}회</div></div><div class="kpi"><div class="small">Forward 승률</div><b>${sh.directionalWinRate==null?'대기':pct(sh.directionalWinRate)}</b></div><div class="kpi"><div class="small">서버 Champion</div><b>${op.best?.name||'BASE'}</b><div class="tiny">Governance ${op.approved?'승인':'보수화'}</div></div></div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">기대 최종 Wallet</div><b>${money(exe.expectedWallet)}</b></div><div class="kpi"><div class="small">Recovery 확률</div><b>${pct(exe.recoveryProbability)}</b></div><div class="kpi"><div class="small">최악 MC Wallet</div><b>${money(exe.worst)}</b></div></div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">Monte Carlo</div><b>${mc.paths||0}경로</b></div><div class="kpi"><div class="small">시장 과열</div><b>${ms.heat??'--'}/100</b></div><div class="kpi"><div class="small">현재 순청산가치</div><b>${money(t.currentNetClose)}</b></div></div>`}
+async function refresh(){card();try{const r=await fetch('./data/research/latest.json?ri='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);LAST=await r.json();ERR=''}catch(e){ERR=String(e?.message||e);LAST=null}render()}
+function heal(){card();if(!LAST&&!ERR)render()}
+function boot(){heal();refresh();[300,800,1500,3000,6000,10000].forEach(ms=>setTimeout(()=>{heal();if(ms===1500||ms===6000)refresh()},ms));setInterval(refresh,60000);setInterval(heal,10000);new MutationObserver(()=>{const c=$('researchShadowCard'),p=home();if(!c||!c.isConnected||c.parentElement!==p||getComputedStyle(c).display==='none')setTimeout(heal,30)}).observe(document.body,{childList:true,subtree:true})}
+window.BTCResearchInline={version:V,refresh,heal,status:()=>LAST};window.BTCResearchBootstrap=window.BTCResearchInline;window.BTCResearchShadow=window.BTCResearchInline;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
+'''
+          s=s.replace('</body>', inline+'</body>')
+          if 'btcResearchInline8186' not in s:
+              raise SystemExit('Research inline bootstrap insertion failed')
           p.write_text(s,encoding='utf-8')
           PY
+      - name: Verify bootstrap
+        run: |
+          grep -q 'btcResearchInline8186' index.html
+          grep -q 'data/research/latest.json' index.html
       - name: Commit bootstrap patch
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch index bootstrap for V8.18.5"
+          git commit -m "Inline Research Shadow bootstrap V8.18.6"
           git push
