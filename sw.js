@@ -1,5 +1,5 @@
-const C='btc-hedge-v8-9-1-20260825';
-const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','dynamic-hedge.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
+const C='btc-hedge-v8-10-0-20260825';
+const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','dynamic-hedge.js','cycle-hedge.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
 const JSONS=['/data/daily/brief.json','/data/daily/global.json','/data/backtests/hedge_strategy.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('btc-hedge-')&&k!==C).map(k=>caches.delete(k)));await self.clients.claim()})())});
