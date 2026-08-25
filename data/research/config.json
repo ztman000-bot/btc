@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "symbol": "BTCUSDT",
+  "position": {
+    "wallet": 69936.30,
+    "added": 0,
+    "longQty": 2.05,
+    "longEntry": 94171.48,
+    "shortQty": 2.10,
+    "shortEntry": 62332.59,
+    "referenceLiquidation": 48000,
+    "feeRate": 0.0004
+  },
+  "goals": {
+    "targetWallet": 69936.30,
+    "hardGuardUsd": 10000,
+    "operatingGuardUsd": 15000,
+    "recoveryLockPct": 0.92
+  },
+  "research": {
+    "monteCarloPaths": 3000,
+    "monteCarloSteps": 42,
+    "oosFolds": 6,
+    "shadowIntervalMinutes": 15,
+    "maxShadowHistory": 500
+  },
+  "notes": "Server-side shadow research baseline. No exchange keys and no real orders. Update this file when the live position materially changes."
+}
