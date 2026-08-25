@@ -1,6 +1,6 @@
-const C='btc-hedge-v8-18-9-20260826';
+const C='btc-hedge-v8-19-0-20260826';
 const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','dynamic-hedge.js','cycle-hedge.js','regime-hedge.js','path-ensemble.js','recovery-engine.js','adaptive-learning.js','execution-exit.js','strategy-governance.js','market-structure.js','terminal-wallet.js','mobile-layout-fix.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
-const JSONS=['/data/daily/brief.json','/data/daily/global.json','/data/backtests/hedge_strategy.json','/data/research/latest.json','/data/research/shadow-history.json','/data/research/config.json'];
+const JSONS=['/data/daily/brief.json','/data/daily/global.json','/data/backtests/hedge_strategy.json','/data/research/latest.json','/data/research/shadow-history.json','/data/research/config.json','/data/research/lab-latest.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)));await self.clients.claim()})())});
 async function networkFirst(req){const c=await caches.open(C);try{const r=await fetch(req,{cache:'no-store'});if(r&&r.ok)await c.put(req,r.clone());return r}catch(e){return await c.match(req)||Response.error()}}
