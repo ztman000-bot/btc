@@ -25,30 +25,27 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.6</title>', s)
+          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.7</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
-              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8186', s)
-              if f'{name}.js?v=8186' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8186" defer></script>\n</body>')
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8187', s)
+              if f'{name}.js?v=8187' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=8187" defer></script>\n</body>')
           s=re.sub(r'<script[^>]*research-bootstrap\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
           s=re.sub(r'<script[^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
           s=re.sub(r'<script\s+id=["\']btcResearchInline\d+["\'][^>]*>.*?</script>\s*','',s,flags=re.I|re.S)
-          research=Path('research-bootstrap.js').read_text(encoding='utf-8')
-          inline='<script id="btcResearchInline8186">\n'+research+'\n</script>\n'
-          s=s.replace('</body>', inline+'</body>')
-          if 'btcResearchInline8186' not in s or 'data/research/latest.json' not in s:
-              raise SystemExit('Research inline bootstrap insertion failed')
+          if 'updater.js?v=8187' not in s:
+              raise SystemExit('updater bootstrap missing')
           p.write_text(s,encoding='utf-8')
           PY
       - name: Verify bootstrap
         run: |
-          grep -q 'btcResearchInline8186' index.html
-          grep -q 'data/research/latest.json' index.html
+          grep -q 'updater.js?v=8187' index.html
+          grep -q 'v850-shell.js?v=8187' index.html
       - name: Commit bootstrap patch
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Inline Research Shadow bootstrap V8.18.6"
+          git commit -m "Patch bootstrap for V8.18.7"
           git push
