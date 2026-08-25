@@ -9,7 +9,7 @@ HIST_PATH=os.path.join(ROOT,'data','research','shadow-history.json')
 
 def jget(url, timeout=20):
     req=urllib.request.Request(url,headers={'User-Agent':'btc-hedge-research/8.18'})
-    with urllib.request.urlopen(req,timeout=timeout) as r: return json.loads(r.read().decode())
+    with urllib.request.urlopen(req,timeout=timeout) as r:return json.loads(r.read().decode())
 
 def load(path, default):
     try:
@@ -18,7 +18,7 @@ def load(path, default):
 
 def save(path,obj):
     os.makedirs(os.path.dirname(path),exist_ok=True)
-    with open(path,'w',encoding='utf-8') as f: json.dump(obj,f,ensure_ascii=False,indent=2)
+    with open(path,'w',encoding='utf-8') as f:json.dump(obj,f,ensure_ascii=False,indent=2)
 
 def ema(a,p):
     if not a:return []
@@ -65,11 +65,10 @@ def fold(slice_,start,p,cost):
     return {'ret':eq-1,'mdd':mdd,'turn':turn}
 
 def robust_search(closes,cost,max_folds):
-    test=48;train=240;folds=[]
-    end=len(closes)
+    test=48;train=240;folds=[];end=len(closes)
     while end>=train+test and len(folds)<max_folds:
         folds.append((end-train-test,end));end-=test
-    if len(folds)<4:return {'ok':False,'reason':'OOS sample insufficient'}
+    if len(folds)<4:return {'ok':False,'reason':'OOS sample insufficient','tested':0,'folds':len(folds),'approved':False}
     stats=[]
     for p in candidates():
         rr=[]
@@ -84,11 +83,23 @@ def robust_search(closes,cost,max_folds):
     return {'ok':True,'tested':len(stats),'folds':len(folds),'best':best,'base':base,'approved':approved,'top5':stats[:5]}
 
 def market_data():
-    k=jget('https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=4h&limit=1000')
-    bars=[[int(x[0]),float(x[1]),float(x[2]),float(x[3]),float(x[4]),float(x[5])] for x in k]
-    premium=jget('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')
-    oi=jget('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT')
-    return bars,premium,oi
+    try:
+        k=jget('https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=4h&limit=1000')
+        bars=[[int(x[0]),float(x[1]),float(x[2]),float(x[3]),float(x[4]),float(x[5])] for x in k]
+        premium=jget('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')
+        oi=jget('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT')
+        return bars,premium,oi,'Binance Futures public API'
+    except Exception:
+        kr=jget('https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=240')
+        if kr.get('error'):raise RuntimeError('Kraken: '+','.join(kr['error']))
+        result=kr['result'];key=next(k for k in result.keys() if k!='last');raw=result[key]
+        bars=[[int(x[0])*1000,float(x[1]),float(x[2]),float(x[3]),float(x[4]),float(x[6])] for x in raw]
+        der=jget('https://www.deribit.com/api/v2/public/ticker?instrument_name=BTC-PERPETUAL')['result']
+        fr=der.get('funding_8h');
+        if fr is None:fr=der.get('current_funding',0)
+        premium={'lastFundingRate':fr or 0,'markPrice':der.get('mark_price') or bars[-1][4],'indexPrice':der.get('index_price') or bars[-1][4]}
+        oi={'openInterest':der.get('open_interest') or 0}
+        return bars,premium,oi,'Kraken 4H OHLC + Deribit BTC-PERPETUAL public API'
 
 def regime(closes):
     e20=ema(closes,20);e50=ema(closes,50);p=closes[-1];score=50
@@ -97,8 +108,8 @@ def regime(closes):
     return max(0,min(100,score))
 
 def structure(premium,oi,prev):
-    funding=float(premium.get('lastFundingRate',0));mark=float(premium.get('markPrice',0));index=float(premium.get('indexPrice',0));basis=(mark-index)/index if index else 0
-    openi=float(oi.get('openInterest',0));prev_oi=(prev or {}).get('marketStructure',{}).get('openInterest');oi_change=(openi-prev_oi)/prev_oi if prev_oi else None
+    funding=float(premium.get('lastFundingRate') or 0);mark=float(premium.get('markPrice') or 0);index=float(premium.get('indexPrice') or 0);basis=(mark-index)/index if index else 0
+    openi=float(oi.get('openInterest') or 0);prev_oi=(prev or {}).get('marketStructure',{}).get('openInterest');oi_change=(openi-prev_oi)/prev_oi if prev_oi else None
     fh=min(1,abs(funding)/.0005);bh=min(1,abs(basis)/.003);oh=min(1,abs(oi_change or 0)/.06)
     heat=round(100*(.45*fh+.30*bh+.25*oh));bias=max(-.18,min(.18,-(math.copysign(.08*fh,funding or 1)+math.copysign(.05*bh,basis or 1)+(math.copysign(.05*oh,(oi_change or 0)*(funding or 1)) if oi_change else 0))))
     return {'healthy':True,'funding':funding,'mark':mark,'index':index,'basis':basis,'openInterest':openi,'oiChange':oi_change,'heat':heat,'bias':bias}
@@ -129,8 +140,7 @@ def terminal(s,cfg,p,cost,funding=0):
 
 def mc_paths(closes,p0,n,steps,blend):
     hist=[math.log(closes[i]/closes[i-1]) for i in range(max(1,len(closes)-500),len(closes)) if closes[i-1]>0]
-    mu=statistics.mean(hist);sd=statistics.pstdev(hist) or .02;drift=mu+blend*sd*.08
-    out=[]
+    mu=statistics.mean(hist);sd=statistics.pstdev(hist) or .02;drift=mu+blend*sd*.08;out=[]
     random.seed(int(p0*100)+len(closes))
     for _ in range(n):
         p=p0
@@ -148,26 +158,23 @@ def actions_eval(cfg,p,ends,cost,funding):
     return sorted([x for x in res if x['valid']],key=lambda x:x['utility'],reverse=True)
 
 def main():
-    cfg=load(CFG_PATH,{}) ; prev=load(OUT_PATH,{}) ; hist=load(HIST_PATH,{'items':[]})
-    bars,premium,oi=market_data();cl=[x[4] for x in bars];p=cl[-1];atr=atr_pct(bars);cost=one_way(cfg,atr);rg=regime(cl);ms=structure(premium,oi,prev);wf=robust_search(cl,cost,cfg['research']['oosFolds'])
-    champ=wf.get('best',{'name':'BASE'});gov=bool(wf.get('approved'))
-    trend=(rg-50)/50;blend=max(-1,min(1,.82*trend+.18*ms['bias']));ends=mc_paths(cl,p,cfg['research']['monteCarloPaths'],cfg['research']['monteCarloSteps'],blend)
-    ranked=actions_eval(cfg,p,ends,cost,ms['funding']);model=ranked[0];executable=model
+    cfg=load(CFG_PATH,{});prev=load(OUT_PATH,{});hist=load(HIST_PATH,{'items':[]})
+    bars,premium,oi,source=market_data();cl=[x[4] for x in bars];p=cl[-1];atr=atr_pct(bars);cost=one_way(cfg,atr);rg=regime(cl);ms=structure(premium,oi,prev);wf=robust_search(cl,cost,cfg['research']['oosFolds'])
+    champ=wf.get('best',{'name':'BASE'});gov=bool(wf.get('approved'));trend=(rg-50)/50;blend=max(-1,min(1,.82*trend+.18*ms['bias']))
+    ends=mc_paths(cl,p,cfg['research']['monteCarloPaths'],cfg['research']['monteCarloSteps'],blend);ranked=actions_eval(cfg,p,ends,cost,ms['funding']);model=ranked[0];executable=model
     if model['id'] not in ('HOLD','EXIT_ALL') and (not gov or not (rg>=72 or rg<=28)):executable=next(x for x in ranked if x['id']=='HOLD')
     current_close=terminal(apply_action(('H',0,'HOLD'),cfg,p,cost),cfg,p,cost,ms['funding'])
     if model['id']=='EXIT_ALL' and current_close<cfg['goals']['targetWallet']:executable=next(x for x in ranked if x['id']=='HOLD')
-    now=datetime.now(timezone.utc).isoformat();prior=(hist.get('items') or [])[-1] if hist.get('items') else None
-    forward=None
+    now=datetime.now(timezone.utc).isoformat();prior=(hist.get('items') or [])[-1] if hist.get('items') else None;forward=None
     if prior:
         ret=p/prior['price']-1;aid=prior.get('executable','HOLD');direction=1 if aid.startswith('SHORT_') else (-1 if aid.startswith('LONG_') else 0)
         forward={'since':prior['at'],'priceReturn':ret,'priorAction':aid,'directionalScore':direction*ret}
     item={'at':now,'price':p,'regimeScore':rg,'champion':champ.get('name'),'governanceApproved':gov,'modelBest':model['id'],'executable':executable['id'],'expectedWallet':executable['expectedWallet'],'recoveryProbability':executable['recoveryProbability'],'forwardFromPrior':forward}
-    items=(hist.get('items') or [])+[item];items=items[-cfg['research']['maxShadowHistory']:]
-    scores=[x.get('forwardFromPrior',{}).get('directionalScore') for x in items if x.get('forwardFromPrior') and x['forwardFromPrior'].get('directionalScore') is not None]
+    items=((hist.get('items') or [])+[item])[-cfg['research']['maxShadowHistory']:];scores=[x.get('forwardFromPrior',{}).get('directionalScore') for x in items if x.get('forwardFromPrior') and x['forwardFromPrior'].get('directionalScore') is not None]
     positive=sum(1 for x in scores if x>0);shadow={'samples':len(items),'directionalEvaluations':len(scores),'directionalWinRate':positive/len(scores) if scores else None,'avgDirectionalScore':statistics.mean(scores) if scores else None}
-    out={'schemaVersion':'1.0','engineVersion':'8.18.0','generatedAt':now,'source':'Binance public futures API; no account keys; no real orders','market':{'price':p,'atr4hPct':atr,'regimeScore':rg},'marketStructure':ms,'optimizer':wf,'executionReality':{'oneWayCost':cost},'monteCarlo':{'paths':len(ends),'steps':cfg['research']['monteCarloSteps'],'terminalPriceP10':percentile(ends,.10),'terminalPriceMedian':percentile(ends,.50),'terminalPriceP90':percentile(ends,.90)},'terminalWallet':{'rankedActions':ranked,'modelBest':model,'executable':executable,'currentNetClose':current_close,'targetWallet':cfg['goals']['targetWallet']},'shadow':shadow,'lastDecision':item}
+    out={'schemaVersion':'1.0','engineVersion':'8.18.0','generatedAt':now,'source':source+'; no account keys; no real orders','market':{'price':p,'atr4hPct':atr,'regimeScore':rg,'bars4h':len(bars)},'marketStructure':ms,'optimizer':wf,'executionReality':{'oneWayCost':cost},'monteCarlo':{'paths':len(ends),'steps':cfg['research']['monteCarloSteps'],'terminalPriceP10':percentile(ends,.10),'terminalPriceMedian':percentile(ends,.50),'terminalPriceP90':percentile(ends,.90)},'terminalWallet':{'rankedActions':ranked,'modelBest':model,'executable':executable,'currentNetClose':current_close,'targetWallet':cfg['goals']['targetWallet']},'shadow':shadow,'lastDecision':item}
     save(OUT_PATH,out);save(HIST_PATH,{'schemaVersion':'1.0','items':items})
-    print(json.dumps({'price':p,'regime':rg,'champion':champ.get('name'),'approved':gov,'best':model['id'],'executable':executable['id'],'shadowSamples':len(items)},ensure_ascii=False))
+    print(json.dumps({'source':source,'bars':len(bars),'price':p,'regime':rg,'champion':champ.get('name'),'approved':gov,'best':model['id'],'executable':executable['id'],'shadowSamples':len(items)},ensure_ascii=False))
 
 if __name__=='__main__':
     try:main()
