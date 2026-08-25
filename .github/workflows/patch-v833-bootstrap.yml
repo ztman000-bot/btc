@@ -25,11 +25,16 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.1</title>', s)
+          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.2</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
-              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8181', s)
-              if f'{name}.js?v=8181' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8181" defer></script>\n</body>')
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8182', s)
+              if f'{name}.js?v=8182' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=8182" defer></script>\n</body>')
+          # Research Shadow는 updater 실패와 무관하게 직접 부팅한다.
+          s=re.sub(r'<script[^>]*id=["\']btcResearchShadowDirect\d+["\'][^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s)
+          direct='<script id="btcResearchShadow8182" src="./research-shadow.js?v=8182" defer></script>\n'
+          if 'id="btcResearchShadow8182"' not in s:
+              s=s.replace('</body>', direct+'</body>')
           if 'navigator.serviceWorker.register' not in s:
               inject='''<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
               s=s.replace('</body>', inject+'</body>')
@@ -41,5 +46,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch index bootstrap for V8.18.1"
+          git commit -m "Patch index bootstrap for V8.18.2"
           git push
