@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "1.1",
-  "generatedAt": "2026-08-25T02:26:32.979751+00:00",
+  "schemaVersion": "1.2",
+  "generatedAt": "2026-08-25T02:27:57.838292+00:00",
   "source": {
     "url": "https://raw.githubusercontent.com/SubhayanBiswas/Binance-Vision-Sample-Data/main/BTCUSDT_1h_Cleaned.csv",
-    "description": "Binance Vision BTCUSDT 1h, 2024-2025 public sample; aggregated to 4h",
+    "description": "Binance Vision BTCUSDT 1h 2024-2025; aggregated to 4h",
     "rows1h": 17544,
     "bars4h": 4386
   },
@@ -22,11 +22,12 @@
     "start80kCross": "2024-11-10T20:00:00+00:00",
     "split": "2025-06-06T20:00:00+00:00",
     "feeRate": 0.0005,
-    "objective": "relative combined hedge equity; utility = PnL - 0.55*MDD - 20*tradeCount",
-    "method": "chronological train/test + 30-day rolling robustness; train MDD guard before test selection"
+    "method": "chronological train/test + 30-day rolling + train/test/overall MDD guards",
+    "objective": "utility = PnL - 0.55*MDD - 20*tradeCount"
   },
   "legacy": {
-    "description": "80K geometric price ladder, 2.5% steps, 0.5 BTC short trim, 50% reserve, no re-hedge",
+    "name": "LEGACY_LADDER",
+    "description": "80K geometric 2.5% ladder; 0.5 BTC trims; 50% short reserve; no rebuild",
     "train": {
       "pnl": -37156.78,
       "maxDrawdown": 44672.68,
@@ -63,7 +64,8 @@
     "testUtility": -21962.86
   },
   "dynamic": {
-    "description": "guarded dynamic hedge: 80K touch only tiny trim; 4H+daily confirmation; strong trim above long entry; re-hedge only after confirmed trend failure; cooldown/hysteresis",
+    "name": "DYNAMIC_GUARDED",
+    "description": "Confirmed trim + confirmed automatic re-hedge",
     "params": {
       "confirmBars": 2,
       "trimStep": 0.5,
@@ -105,316 +107,106 @@
       "start": "2024-11-10T20:00:00+00:00",
       "end": "2025-12-31T20:00:00+00:00"
     },
-    "testUtility": -10603.47
+    "testUtility": -10603.47,
+    "rolling30d": {
+      "windows": 28,
+      "wins": 18,
+      "winRatePct": 64.3
+    },
+    "checks": {
+      "testUtilityBetter": true,
+      "testRiskOk": true,
+      "trainRiskOk": true,
+      "overallRiskOk": false,
+      "robustRolling": true
+    },
+    "qualified": false,
+    "scoreForSelection": -22162.88
   },
-  "rolling30d": {
-    "windows": 28,
-    "dynamicWins": 18,
-    "dynamicWinRatePct": 64.3,
-    "details": [
-      {
-        "start": "2024-11-10",
-        "legacyUtility": -49400.05,
-        "dynamicUtility": -46740.79,
-        "legacyPnl": -29519.18,
-        "dynamicPnl": -29247.41,
-        "legacyMdd": 36001.58,
-        "dynamicMdd": 31006.15,
-        "dynamicWin": true
-      },
-      {
-        "start": "2024-11-24",
-        "legacyUtility": -33116.17,
-        "dynamicUtility": -10439.71,
-        "legacyPnl": -10363.11,
-        "dynamicPnl": -942.51,
-        "legacyMdd": 41260.11,
-        "dynamicMdd": 16431.27,
-        "dynamicWin": true
-      },
-      {
-        "start": "2024-12-08",
-        "legacyUtility": -13514.13,
-        "dynamicUtility": -7750.93,
-        "legacyPnl": 4203.45,
-        "dynamicPnl": 2648.35,
-        "legacyMdd": 32141.05,
-        "dynamicMdd": 18144.14,
-        "dynamicWin": true
-      },
-      {
-        "start": "2024-12-22",
-        "legacyUtility": -44794.28,
-        "dynamicUtility": -37896.69,
-        "legacyPnl": -25789.07,
-        "dynamicPnl": -21317.68,
-        "legacyMdd": 34409.47,
-        "dynamicMdd": 29452.74,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-01-05",
-        "legacyUtility": -30096.78,
-        "dynamicUtility": -19579.13,
-        "legacyPnl": -7771.62,
-        "dynamicPnl": -2174.68,
-        "legacyMdd": 40482.1,
-        "dynamicMdd": 30771.73,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-01-19",
-        "legacyUtility": -5489.98,
-        "dynamicUtility": -5057.8,
-        "legacyPnl": 5458.11,
-        "dynamicPnl": 4995.53,
-        "legacyMdd": 19832.89,
-        "dynamicMdd": 17696.97,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-02-02",
-        "legacyUtility": 3205.85,
-        "dynamicUtility": 6045.67,
-        "legacyPnl": 23937.34,
-        "dynamicPnl": 26837.16,
-        "legacyMdd": 37657.25,
-        "dynamicMdd": 37657.25,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-02-16",
-        "legacyUtility": 11489.77,
-        "dynamicUtility": 9473.89,
-        "legacyPnl": 32221.26,
-        "dynamicPnl": 30325.38,
-        "legacyMdd": 37657.25,
-        "dynamicMdd": 37657.25,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-03-02",
-        "legacyUtility": 11274.63,
-        "dynamicUtility": 3977.08,
-        "legacyPnl": 27305.7,
-        "dynamicPnl": 16849.7,
-        "legacyMdd": 29147.4,
-        "dynamicMdd": 22786.58,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-03-16",
-        "legacyUtility": -17143.46,
-        "dynamicUtility": -27524.67,
-        "legacyPnl": -5387.03,
-        "dynamicPnl": -11403.23,
-        "legacyMdd": 21302.6,
-        "dynamicMdd": 28511.7,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-03-30",
-        "legacyUtility": -44404.75,
-        "dynamicUtility": -34038.16,
-        "legacyPnl": -24326.5,
-        "dynamicPnl": -14913.33,
-        "legacyMdd": 36360.46,
-        "dynamicMdd": 34045.15,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-04-13",
-        "legacyUtility": -51881.6,
-        "dynamicUtility": -25776.12,
-        "legacyPnl": -32755.81,
-        "dynamicPnl": -16307.12,
-        "legacyMdd": 34628.71,
-        "dynamicMdd": 16307.27,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-04-27",
-        "legacyUtility": -44960.1,
-        "dynamicUtility": -15328.58,
-        "legacyPnl": -27937.72,
-        "dynamicPnl": -9592.63,
-        "legacyMdd": 30804.32,
-        "dynamicMdd": 9592.63,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-05-11",
-        "legacyUtility": -31384.8,
-        "dynamicUtility": -27102.49,
-        "legacyPnl": -16597.7,
-        "dynamicPnl": -15010.47,
-        "legacyMdd": 26812.9,
-        "dynamicMdd": 20967.3,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-05-25",
-        "legacyUtility": -5718.72,
-        "dynamicUtility": -16376.71,
-        "legacyPnl": 8763.0,
-        "dynamicPnl": -4021.03,
-        "legacyMdd": 26330.4,
-        "dynamicMdd": 21773.96,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-06-08",
-        "legacyUtility": -24464.96,
-        "dynamicUtility": -24492.02,
-        "legacyPnl": -9437.93,
-        "dynamicPnl": -11249.16,
-        "legacyMdd": 27285.5,
-        "dynamicMdd": 23241.56,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-06-22",
-        "legacyUtility": -53134.61,
-        "dynamicUtility": -33277.33,
-        "legacyPnl": -33257.48,
-        "dynamicPnl": -21172.47,
-        "legacyMdd": 35994.78,
-        "dynamicMdd": 21172.47,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-07-06",
-        "legacyUtility": -38943.88,
-        "dynamicUtility": -17190.48,
-        "legacyPnl": -20623.44,
-        "dynamicPnl": -7489.06,
-        "legacyMdd": 33164.44,
-        "dynamicMdd": 16620.76,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-07-20",
-        "legacyUtility": -14685.1,
-        "dynamicUtility": -10570.16,
-        "legacyPnl": 3426.34,
-        "dynamicPnl": -1520.12,
-        "legacyMdd": 32857.16,
-        "dynamicMdd": 15545.53,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-08-03",
-        "legacyUtility": -20985.36,
-        "dynamicUtility": -7106.39,
-        "legacyPnl": -5636.01,
-        "dynamicPnl": 1678.55,
-        "legacyMdd": 27798.81,
-        "dynamicMdd": 15390.8,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-08-17",
-        "legacyUtility": -13259.69,
-        "dynamicUtility": -2361.54,
-        "legacyPnl": 1819.5,
-        "dynamicPnl": 7629.17,
-        "legacyMdd": 27416.7,
-        "dynamicMdd": 17728.57,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-08-31",
-        "legacyUtility": -30643.64,
-        "dynamicUtility": -31634.29,
-        "legacyPnl": -17218.59,
-        "dynamicPnl": -19021.88,
-        "legacyMdd": 24300.09,
-        "dynamicMdd": 22058.92,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-09-14",
-        "legacyUtility": -30974.73,
-        "dynamicUtility": -21198.47,
-        "legacyPnl": -6678.72,
-        "dynamicPnl": -7658.4,
-        "legacyMdd": 44065.47,
-        "dynamicMdd": 23672.85,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-09-28",
-        "legacyUtility": -33789.62,
-        "dynamicUtility": -19924.35,
-        "legacyPnl": -16979.64,
-        "dynamicPnl": -7992.32,
-        "legacyMdd": 30418.14,
-        "dynamicMdd": 20967.32,
-        "dynamicWin": true
-      },
-      {
-        "start": "2025-10-12",
-        "legacyUtility": 19257.87,
-        "dynamicUtility": 15134.17,
-        "legacyPnl": 35665.8,
-        "dynamicPnl": 26846.2,
-        "legacyMdd": 29832.6,
-        "dynamicMdd": 20967.32,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-10-26",
-        "legacyUtility": 71540.91,
-        "dynamicUtility": 58093.96,
-        "legacyPnl": 81521.1,
-        "dynamicPnl": 66490.78,
-        "legacyMdd": 18145.8,
-        "dynamicMdd": 15121.5,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-11-09",
-        "legacyUtility": 17149.98,
-        "dynamicUtility": 10604.95,
-        "legacyPnl": 36096.6,
-        "dynamicPnl": 27236.26,
-        "legacyMdd": 34448.4,
-        "dynamicMdd": 29729.66,
-        "dynamicWin": false
-      },
-      {
-        "start": "2025-11-23",
-        "legacyUtility": -18965.97,
-        "dynamicUtility": -22441.52,
-        "legacyPnl": -8232.45,
-        "dynamicPnl": -11066.13,
-        "legacyMdd": 19406.4,
-        "dynamicMdd": 19846.16,
-        "dynamicWin": false
-      }
-    ]
+  "hybrid": {
+    "name": "HYBRID_CONFIRMED",
+    "description": "Confirmed trim; on breakdown stop trimming but do not automatically rebuild short",
+    "params": {
+      "confirmBars": 2,
+      "trimStep": 0.5,
+      "rebuildStep": 0.25,
+      "minStrongShort": 1.0,
+      "cooldownBars": 6,
+      "rawBreakTrim": 0.5
+    },
+    "train": {
+      "pnl": -23894.7,
+      "maxDrawdown": 26249.25,
+      "turnoverTrades": 6,
+      "avgShortQty": 1.049,
+      "minShortQty": 1.0,
+      "maxShortQty": 4.0,
+      "downside4h": 2404.98,
+      "start": "2024-11-10T20:00:00+00:00",
+      "end": "2025-06-06T20:00:00+00:00"
+    },
+    "test": {
+      "pnl": -10597.73,
+      "maxDrawdown": 13104.24,
+      "turnoverTrades": 6,
+      "avgShortQty": 1.058,
+      "minShortQty": 1.0,
+      "maxShortQty": 4.0,
+      "downside4h": 1269.26,
+      "start": "2025-06-06T20:00:00+00:00",
+      "end": "2025-12-31T20:00:00+00:00"
+    },
+    "overall": {
+      "pnl": -23894.7,
+      "maxDrawdown": 26249.25,
+      "turnoverTrades": 6,
+      "avgShortQty": 1.025,
+      "minShortQty": 1.0,
+      "maxShortQty": 4.0,
+      "downside4h": 2404.98,
+      "start": "2024-11-10T20:00:00+00:00",
+      "end": "2025-12-31T20:00:00+00:00"
+    },
+    "testUtility": -17925.06,
+    "rolling30d": {
+      "windows": 28,
+      "wins": 22,
+      "winRatePct": 78.6
+    },
+    "checks": {
+      "testUtilityBetter": true,
+      "testRiskOk": true,
+      "trainRiskOk": true,
+      "overallRiskOk": true,
+      "robustRolling": true
+    },
+    "qualified": true,
+    "scoreForSelection": -25615.42
   },
-  "comparison": {
-    "testPnlDelta": 14408.02,
-    "testMddDelta": 670.23,
-    "overallPnlDelta": 11703.77,
-    "overallMddDelta": 20918.39,
-    "testUtilityDelta": 11359.39,
-    "pnlBetter": true,
-    "testRiskOk": true,
-    "trainRiskOk": true,
-    "overallRiskOk": false,
-    "robustRolling": true
+  "recommendation": "HYBRID_CONFIRMED",
+  "selectedParams": {
+    "confirmBars": 2,
+    "trimStep": 0.5,
+    "rebuildStep": 0.25,
+    "minStrongShort": 1.0,
+    "cooldownBars": 6,
+    "rawBreakTrim": 0.5
   },
-  "recommendation": "HYBRID_DYNAMIC_GUARDED",
+  "comparisonToLegacy": {
+    "testPnlDelta": -12017.19,
+    "testMddDelta": -29263.62,
+    "overallPnlDelta": -3369.72,
+    "overallMddDelta": -32024.83,
+    "rollingWinRatePct": 78.6
+  },
   "guardrails": {
-    "neverTrimOn80kTouchAlone": true,
-    "require4hConfirmationForMainTrim": true,
-    "rehedgeNeedsTrendFailure": true,
-    "strongTrimRequiresDailyTrend": true,
-    "shortProfitZoneProtectsHedge": true,
-    "hysteresis": true,
-    "maxShortQty": 4.0,
-    "note": "Signal is advisory; order execution remains manual."
+    "80kTouchNeverForcesMainTrim": true,
+    "mainTrimRequires4hConfirmation": true,
+    "strongTrimNeedsDailyTrend": true,
+    "breakdownStopsFurtherTrim": true,
+    "automaticRehedge": false,
+    "manualRehedgeIfHybrid": true,
+    "shortProfitZonePreserved": true,
+    "ordersRemainManual": true
   }
 }
