@@ -18,34 +18,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch index bootstrap to current app
+      - name: Patch stable V8.18.8 bootstrap
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.7</title>', s)
+          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.8</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
-              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8187', s)
-              if f'{name}.js?v=8187' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8187" defer></script>\n</body>')
-          s=re.sub(r'<script[^>]*research-bootstrap\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
-          s=re.sub(r'<script[^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s,flags=re.I)
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8188', s)
+              if f'{name}.js?v=8188' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=8188" defer></script>\n</body>')
+          # Remove legacy Research boot paths; updater owns Research from V8.18.8.
+          s=re.sub(r'<script[^>]*research-bootstrap\.js[^>]*></script>\s*','',s,flags=re.I)
+          s=re.sub(r'<script[^>]*research-shadow\.js[^>]*></script>\s*','',s,flags=re.I)
           s=re.sub(r'<script\s+id=["\']btcResearchInline\d+["\'][^>]*>.*?</script>\s*','',s,flags=re.I|re.S)
-          if 'updater.js?v=8187' not in s:
-              raise SystemExit('updater bootstrap missing')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify bootstrap
+      - name: Verify stable bootstrap
         run: |
-          grep -q 'updater.js?v=8187' index.html
-          grep -q 'v850-shell.js?v=8187' index.html
-      - name: Commit bootstrap patch
+          grep -q 'updater.js?v=8188' index.html
+          grep -q 'v850-shell.js?v=8188' index.html
+          grep -q 'BTC Hedge Assistant v8.18.8' index.html
+      - name: Commit stable bootstrap
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch bootstrap for V8.18.7"
+          git commit -m "Patch stable bootstrap V8.18.8"
           git push
