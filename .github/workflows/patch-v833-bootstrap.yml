@@ -25,15 +25,14 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.3</title>', s)
+          s=re.sub(r'<title>BTC Hedge Assistant v[^<]+</title>', '<title>BTC Hedge Assistant v8.18.4</title>', s)
           for name in ['learning','updater','dailybrief','dailybrief-fix','v850-shell']:
-              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8183', s)
-              if f'{name}.js?v=8183' not in s:
-                  s=s.replace('</body>', f'<script src="./{name}.js?v=8183" defer></script>\n</body>')
-          # Research placeholder bootstrap is direct and independent from updater.
+              s=re.sub(rf'{re.escape(name)}\.js\?v=\d+', f'{name}.js?v=8184', s)
+              if f'{name}.js?v=8184' not in s:
+                  s=s.replace('</body>', f'<script src="./{name}.js?v=8184" defer></script>\n</body>')
           s=re.sub(r'<script[^>]*id=["\']btcResearchBootstrap\d+["\'][^>]*research-bootstrap\.js\?v=\d+[^>]*></script>\s*','',s)
           s=re.sub(r'<script[^>]*id=["\']btcResearchShadow\d+["\'][^>]*research-shadow\.js\?v=\d+[^>]*></script>\s*','',s)
-          direct='<script id="btcResearchBootstrap8183" src="./research-bootstrap.js?v=8183" defer></script>\n<script id="btcResearchShadow8183" src="./research-shadow.js?v=8183" defer></script>\n'
+          direct='<script id="btcResearchBootstrap8184" src="./research-bootstrap.js?v=8184" defer></script>\n<script id="btcResearchShadow8184" src="./research-shadow.js?v=8184" defer></script>\n'
           s=s.replace('</body>', direct+'</body>')
           if 'navigator.serviceWorker.register' not in s:
               inject='''<script>\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})\n      .then(reg => reg.update())\n      .catch(err => console.warn('SW registration failed', err));\n  });\n}\n</script>\n'''
@@ -46,5 +45,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Patch index bootstrap for V8.18.3"
+          git commit -m "Patch index bootstrap for V8.18.4"
           git push
