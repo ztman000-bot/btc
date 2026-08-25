@@ -1,6 +1,6 @@
-const C='btc-hedge-v8-8-2-20260825';
-const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
-const JSONS=['/data/daily/brief.json','/data/daily/global.json'];
+const C='btc-hedge-v8-9-0-20260825';
+const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','dynamic-hedge.js','version-guard.js','globalbrief.js','globalbrief-v868.js'];
+const JSONS=['/data/daily/brief.json','/data/daily/global.json','/data/backtests/hedge_strategy.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('btc-hedge-')&&k!==C).map(k=>caches.delete(k)));await self.clients.claim()})())});
 async function networkFirst(req){const c=await caches.open(C);try{const r=await fetch(req,{cache:'no-store'});if(r&&r.ok)c.put(req,r.clone());return r}catch(e){return await c.match(req)||Response.error()}}
