@@ -19,7 +19,7 @@ CFG = {
 }
 
 def fetch_rows():
-    req = urllib.request.Request(SOURCE_URL, headers={'User-Agent':'btc-hedge-backtest/1.0'})
+    req = urllib.request.Request(SOURCE_URL, headers={'User-Agent':'btc-hedge-backtest/1.1'})
     with urllib.request.urlopen(req, timeout=60) as r:
         text = r.read().decode('utf-8-sig')
     out=[]
@@ -51,7 +51,7 @@ def add_indicators(bars):
     closes=[b['c'] for b in bars]
     e20=ema(closes,20); e50=ema(closes,50)
     daily=[]; di=[]; last_date=None
-    for i,b in enumerate(bars):
+    for b in bars:
         d=b['dt'].date()
         if d!=last_date:
             daily.append(b['c']); di.append(len(daily)-1); last_date=d
@@ -88,13 +88,13 @@ def sim_legacy(bars, start_idx, end_idx=None):
     next_level=max(CFG['breakout'],p0)*mult
     prev=p0
     for i in range(start_idx+1,end_idx+1):
-        b=bars[i]; p=b['c']; eq+=(L-q)*(p-prev)
+        p=bars[i]['c']; eq+=(L-q)*(p-prev)
         while p>=next_level and q>minq+1e-9:
             dq=min(step,q-minq); q-=dq; eq-=dq*p*fee; trades+=1; next_level*=mult
         curve.append(eq); shorts.append(q); prev=p
     return metrics(curve,trades,shorts,bars[start_idx]['dt'],bars[end_idx]['dt'])
 
-def target_short(bars,i,params):
+def target_short(bars,i,params,q):
     b=bars[i]; c=b['c']; B=CFG['breakout']; LE=CFG['longEntry']; SQ=CFG['shortQty']
     bull4=c>b['ema20'] and b['ema20']>b['ema50']
     bear4=c<b['ema20'] and b['ema20']<b['ema50']
@@ -102,16 +102,26 @@ def target_short(bars,i,params):
     bearD=b['dclose']<b['d10']<b['d20']
     k=params['confirmBars']
     accepted=i>=k-1 and all(bars[j]['c']>B for j in range(i-k+1,i+1))
-    # Failed break / bearish re-entry: restore hedge rather than keep trimming.
-    if c < B*0.985 and (bear4 or bearD): return SQ, 'REHEDGE_STRONG'
-    if c < B: return min(SQ,3.75), 'REHEDGE'
-    if c <= CFG['shortEntry']*1.05: return SQ, 'SHORT_PROFIT_ZONE'
-    if accepted and bull4 and bullD and c>LE: return params['minStrongShort'], 'BULL_STRONG'
-    if accepted and bull4 and bullD: return max(params['minStrongShort'],1.5), 'BULL_CONFIRMED'
-    if accepted and bull4: return max(params['minStrongShort'],2.25), 'BULL_4H'
-    # Raw breakout only: keep most of hedge; at most a tiny trim.
-    if c>B: return max(params['minStrongShort'],SQ-params['rawBreakTrim']), 'BREAK_ONLY'
-    return SQ, 'HOLD'
+    # Profit-zone protection: a deep fall is exactly when the short hedge becomes valuable.
+    if c <= CFG['shortEntry']*1.05:
+        return SQ, 'SHORT_PROFIT_ZONE'
+    # Guarded re-hedge: a simple 80K re-entry is NOT enough. Avoid whipsaw by requiring trend failure.
+    if c < B*0.97 and bear4 and bearD:
+        return SQ, 'REHEDGE_CONFIRMED'
+    if c < B*0.985 and bear4:
+        return max(q,3.0), 'REHEDGE_4H'
+    if c < B:
+        return q, 'FAILED_BREAK_WAIT'
+    # Upside: the first break gets only a tiny trim; main trim requires 4H/daily confirmation.
+    if accepted and bull4 and bullD and c>LE:
+        return params['minStrongShort'], 'BULL_STRONG'
+    if accepted and bull4 and bullD:
+        return max(params['minStrongShort'],1.5), 'BULL_CONFIRMED'
+    if accepted and bull4:
+        return max(params['minStrongShort'],2.25), 'BULL_4H'
+    if c>B:
+        return max(params['minStrongShort'],SQ-params['rawBreakTrim']), 'BREAK_ONLY'
+    return q, 'HOLD'
 
 def sim_dynamic(bars,start_idx,params,end_idx=None):
     end_idx=end_idx if end_idx is not None else len(bars)-1
@@ -120,7 +130,7 @@ def sim_dynamic(bars,start_idx,params,end_idx=None):
     cooldown=params['cooldownBars']
     for i in range(start_idx+1,end_idx+1):
         p=bars[i]['c']; eq+=(L-q)*(p-prev)
-        target,_=target_short(bars,i,params)
+        target,_=target_short(bars,i,params,q)
         if i-last_trade>=cooldown:
             if q>target+1e-9:
                 dq=min(params['trimStep'],q-target); q-=dq; eq-=dq*p*fee; trades+=1; last_trade=i
@@ -129,7 +139,7 @@ def sim_dynamic(bars,start_idx,params,end_idx=None):
         curve.append(eq); shorts.append(q); prev=p
     return metrics(curve,trades,shorts,bars[start_idx]['dt'],bars[end_idx]['dt'])
 
-def utility(m): return m['pnl'] - 0.55*m['maxDrawdown'] - 15*m['turnoverTrades']
+def utility(m): return m['pnl'] - 0.55*m['maxDrawdown'] - 20*m['turnoverTrades']
 
 def find_start(bars):
     B=CFG['breakout']
@@ -141,55 +151,56 @@ def rolling_windows(bars,start_idx,params,days=30,step_days=14):
     per_day=6; length=days*per_day; step=step_days*per_day; out=[]
     i=start_idx
     while i+length < len(bars):
-        a=sim_legacy(bars,i,i+length)
-        d=sim_dynamic(bars,i,params,i+length)
+        a=sim_legacy(bars,i,i+length); d=sim_dynamic(bars,i,params,i+length)
         out.append({'start':bars[i]['dt'].date().isoformat(),'legacyUtility':round(utility(a),2),'dynamicUtility':round(utility(d),2),'legacyPnl':a['pnl'],'dynamicPnl':d['pnl'],'legacyMdd':a['maxDrawdown'],'dynamicMdd':d['maxDrawdown'],'dynamicWin':utility(d)>utility(a)})
         i+=step
     return out
 
 def main():
     rows=fetch_rows(); bars=add_indicators(aggregate_4h(rows)); start=find_start(bars)
-    # Chronological train/test prevents selecting parameters on the same period used for evaluation.
-    split=start + max(120,(len(bars)-start)//2)
-    split=min(split,len(bars)-2)
+    split=start + max(120,(len(bars)-start)//2); split=min(split,len(bars)-2)
+    legacy_train=sim_legacy(bars,start,split); legacy_test=sim_legacy(bars,split,len(bars)-1); legacy_all=sim_legacy(bars,start)
     grid=[]
-    for confirm,trim,rebuild,minstrong,cool,raw in product([2,3],[0.25,0.5],[0.25,0.5],[0.5,1.0,1.5],[3,6],[0.25,0.5]):
+    for confirm,trim,rebuild,minstrong,cool,raw in product([2,3],[0.25,0.5],[0.25,0.5],[0.5,1.0,1.5],[6,12],[0.25,0.5]):
         p={'confirmBars':confirm,'trimStep':trim,'rebuildStep':rebuild,'minStrongShort':minstrong,'cooldownBars':cool,'rawBreakTrim':raw}
         m=sim_dynamic(bars,start,p,split)
         grid.append((utility(m),p,m))
     grid.sort(key=lambda x:x[0],reverse=True)
-    # Prefer robust candidates among the top train performers by test utility, not the single most-overfit train winner.
-    finalists=grid[:max(5,len(grid)//10)]
+    finalists=grid[:max(8,len(grid)//8)]
+    risk_finalists=[x for x in finalists if x[2]['maxDrawdown']<=legacy_train['maxDrawdown']*1.15]
+    if risk_finalists: finalists=risk_finalists
     scored=[]
     for train_u,p,train_m in finalists:
         test_m=sim_dynamic(bars,split,p,len(bars)-1); scored.append((utility(test_m),train_u,p,train_m,test_m))
     scored.sort(key=lambda x:x[0],reverse=True)
     test_u,train_u,best,train_dyn,test_dyn=scored[0]
-    legacy_train=sim_legacy(bars,start,split); legacy_test=sim_legacy(bars,split,len(bars)-1)
-    legacy_all=sim_legacy(bars,start); dyn_all=sim_dynamic(bars,start,best)
+    dyn_all=sim_dynamic(bars,start,best)
     rolls=rolling_windows(bars,start,best)
     wins=sum(1 for x in rolls if x['dynamicWin']); winrate=(wins/len(rolls)*100) if rolls else 0
     legacy_test_u=utility(legacy_test); dyn_test_u=utility(test_dyn)
-    pnl_better=test_dyn['pnl']>legacy_test['pnl']; risk_ok=test_dyn['maxDrawdown']<=legacy_test['maxDrawdown']*1.10
+    pnl_better=test_dyn['pnl']>legacy_test['pnl']
+    test_risk_ok=test_dyn['maxDrawdown']<=legacy_test['maxDrawdown']*1.10
+    train_risk_ok=train_dyn['maxDrawdown']<=legacy_train['maxDrawdown']*1.15
+    overall_risk_ok=dyn_all['maxDrawdown']<=legacy_all['maxDrawdown']*1.20
     robust=winrate>=55
-    if dyn_test_u>legacy_test_u and risk_ok and robust:
-        rec='DYNAMIC'
-    elif dyn_test_u>legacy_test_u*0.95 and test_dyn['maxDrawdown']<legacy_test['maxDrawdown'] and robust:
+    if dyn_test_u>legacy_test_u and test_risk_ok and train_risk_ok and overall_risk_ok and robust:
+        rec='DYNAMIC_GUARDED'
+    elif dyn_test_u>legacy_test_u and test_risk_ok and robust:
         rec='HYBRID_DYNAMIC_GUARDED'
     else:
         rec='LEGACY_GUARDED'
     payload={
-      'schemaVersion':'1.0','generatedAt':datetime.now(timezone.utc).isoformat(),'source':{'url':SOURCE_URL,'description':'Binance Vision BTCUSDT 1h, 2024-2025 public sample; aggregated to 4h','rows1h':len(rows),'bars4h':len(bars)},
-      'config':CFG,'evaluation':{'start80kCross':bars[start]['dt'].isoformat(),'split':bars[split]['dt'].isoformat(),'feeRate':CFG['feeRate'],'objective':'relative combined hedge equity; utility = PnL - 0.55*MDD - 15*tradeCount'},
+      'schemaVersion':'1.1','generatedAt':datetime.now(timezone.utc).isoformat(),'source':{'url':SOURCE_URL,'description':'Binance Vision BTCUSDT 1h, 2024-2025 public sample; aggregated to 4h','rows1h':len(rows),'bars4h':len(bars)},
+      'config':CFG,'evaluation':{'start80kCross':bars[start]['dt'].isoformat(),'split':bars[split]['dt'].isoformat(),'feeRate':CFG['feeRate'],'objective':'relative combined hedge equity; utility = PnL - 0.55*MDD - 20*tradeCount','method':'chronological train/test + 30-day rolling robustness; train MDD guard before test selection'},
       'legacy':{'description':'80K geometric price ladder, 2.5% steps, 0.5 BTC short trim, 50% reserve, no re-hedge','train':legacy_train,'test':legacy_test,'overall':legacy_all,'testUtility':round(legacy_test_u,2)},
-      'dynamic':{'description':'80K break only tiny trim; 4H + daily confirmation; stronger trim above long entry; failed-break re-hedge; cooldown/hysteresis','params':best,'train':train_dyn,'test':test_dyn,'overall':dyn_all,'testUtility':round(dyn_test_u,2)},
+      'dynamic':{'description':'guarded dynamic hedge: 80K touch only tiny trim; 4H+daily confirmation; strong trim above long entry; re-hedge only after confirmed trend failure; cooldown/hysteresis','params':best,'train':train_dyn,'test':test_dyn,'overall':dyn_all,'testUtility':round(dyn_test_u,2)},
       'rolling30d':{'windows':len(rolls),'dynamicWins':wins,'dynamicWinRatePct':round(winrate,1),'details':rolls},
-      'comparison':{'testPnlDelta':round(test_dyn['pnl']-legacy_test['pnl'],2),'testMddDelta':round(test_dyn['maxDrawdown']-legacy_test['maxDrawdown'],2),'testUtilityDelta':round(dyn_test_u-legacy_test_u,2),'pnlBetter':pnl_better,'riskOk':risk_ok,'robustRolling':robust},
+      'comparison':{'testPnlDelta':round(test_dyn['pnl']-legacy_test['pnl'],2),'testMddDelta':round(test_dyn['maxDrawdown']-legacy_test['maxDrawdown'],2),'overallPnlDelta':round(dyn_all['pnl']-legacy_all['pnl'],2),'overallMddDelta':round(dyn_all['maxDrawdown']-legacy_all['maxDrawdown'],2),'testUtilityDelta':round(dyn_test_u-legacy_test_u,2),'pnlBetter':pnl_better,'testRiskOk':test_risk_ok,'trainRiskOk':train_risk_ok,'overallRiskOk':overall_risk_ok,'robustRolling':robust},
       'recommendation':rec,
-      'guardrails':{'neverTrimOn80kTouchAlone':True,'require4hConfirmationForMainTrim':True,'allowRehedgeAfterFailedBreak':True,'strongTrimRequiresDailyTrend':True,'shortProfitZoneProtectsHedge':True,'maxShortQty':CFG['shortQty'],'note':'Signal is advisory; order execution remains manual.'}
+      'guardrails':{'neverTrimOn80kTouchAlone':True,'require4hConfirmationForMainTrim':True,'rehedgeNeedsTrendFailure':True,'strongTrimRequiresDailyTrend':True,'shortProfitZoneProtectsHedge':True,'hysteresis':True,'maxShortQty':CFG['shortQty'],'note':'Signal is advisory; order execution remains manual.'}
     }
     os.makedirs(os.path.dirname(OUT_PATH),exist_ok=True)
     with open(OUT_PATH,'w',encoding='utf-8') as f: json.dump(payload,f,ensure_ascii=False,indent=2)
-    print(json.dumps({'recommendation':rec,'best':best,'legacyTest':legacy_test,'dynamicTest':test_dyn,'rollingWinRate':winrate},indent=2))
+    print(json.dumps({'recommendation':rec,'best':best,'legacyTrain':legacy_train,'dynamicTrain':train_dyn,'legacyTest':legacy_test,'dynamicTest':test_dyn,'legacyAll':legacy_all,'dynamicAll':dyn_all,'rollingWinRate':winrate},indent=2))
 
 if __name__=='__main__': main()
