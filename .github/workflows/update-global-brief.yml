@@ -8,11 +8,18 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: btc-repo-writer
+  cancel-in-progress: false
+
 jobs:
   brief:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -20,8 +27,9 @@ jobs:
         run: pip install feedparser deep-translator
       - name: Build briefing
         run: python scripts/global_brief.py
-      - name: Commit updated briefing
+      - name: Commit updated briefing safely
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/daily/brief.json data/daily/global.json
@@ -29,5 +37,14 @@ jobs:
             echo "No changes"
           else
             git commit -m "Update global briefing"
-            git push
+            for attempt in 1 2 3; do
+              git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+              echo "Push conflict; retry ${attempt}/3"
+              git rebase --abort 2>/dev/null || true
+              git fetch origin "${GITHUB_REF_NAME}"
+              git rebase "origin/${GITHUB_REF_NAME}"
+              sleep $((attempt * 2))
+            done
+            echo "Failed to push after 3 attempts"
+            exit 1
           fi
