@@ -2,8 +2,8 @@
 (function(){'use strict';
   var CONFIG=Object.freeze({
     name:'BTC Hedge Assistant',
-    version:'8.19.2',
-    architecture:'Architecture Stabilization + Symmetric Hedge Rotation',
+    version:'8.19.3',
+    architecture:'Architecture Stabilization + Symmetric Hedge Rotation + Reversal Intelligence',
     safety:{hardGuardUsd:10000,failSafeOnCriticalModuleLoss:true},
     modules:{
       recovery:'Recovery Engine 2.0',
@@ -11,7 +11,8 @@
       regime:'5-Regime Champion',
       guard:'Dynamic 10K Guard 2.0',
       governance:'Champion–Challenger 2.0',
-      rotation:'Symmetric Profit Transfer / Hedge Rotation'
+      rotation:'Symmetric Profit Transfer / Hedge Rotation',
+      reversal:'Reversal Intelligence Engine'
     }
   });
   window.BTC_APP_CONFIG=CONFIG;
