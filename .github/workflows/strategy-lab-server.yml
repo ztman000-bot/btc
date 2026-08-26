@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: strategy-lab-4h
+  group: btc-repo-writer
   cancel-in-progress: false
 
 jobs:
@@ -34,6 +34,7 @@ jobs:
         run: python scripts/strategy_lab_server.py
       - name: Commit lab state
         run: |
+          set -e
           git config user.name "btc-strategy-lab-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/research/lab-latest.json data/research/lab-history.json
