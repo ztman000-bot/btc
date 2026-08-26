@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: btc-repo-writer
+  group: btc-hedge-backtest
   cancel-in-progress: false
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           python-version: '3.12'
       - name: Run reproducible hedge backtest
         run: python scripts/hedge_backtest.py
-      - name: Commit backtest result
+      - name: Commit backtest result safely
         run: |
           set -e
           git config user.name 'github-actions[bot]'
@@ -36,8 +36,18 @@ jobs:
           git add data/backtests/hedge_strategy.json
           if git diff --cached --quiet; then
             echo 'No result changes'
-          else
-            git commit -m 'Update hedge strategy backtest result'
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            exit 0
           fi
+          git commit -m 'Update hedge strategy backtest result'
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Backtest push conflict; retry ${attempt}/3"
+            git rebase --abort 2>/dev/null || true
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}" || true
+            sleep $((attempt * 3))
+          done
+          echo 'Failed to push backtest result after 3 attempts'
+          exit 1
