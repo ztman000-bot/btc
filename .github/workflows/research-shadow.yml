@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: btc-research-shadow
+  group: btc-repo-writer
   cancel-in-progress: false
 
 jobs:
@@ -38,6 +38,7 @@ jobs:
 
       - name: Commit research state
         run: |
+          set -e
           git config user.name "btc-research-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/research/latest.json data/research/shadow-history.json
