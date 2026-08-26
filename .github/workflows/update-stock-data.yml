@@ -8,12 +8,19 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: btc-repo-writer
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -22,9 +29,14 @@ jobs:
         run: python .github/scripts/fetch_market_data.py
       - name: Commit updated JSON
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/stocks
-          git diff --cached --quiet && exit 0
-          git commit -m "Update stock relay data"
-          git push
+          if git diff --cached --quiet; then
+            echo "No stock changes"
+          else
+            git commit -m "Update stock relay data"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
