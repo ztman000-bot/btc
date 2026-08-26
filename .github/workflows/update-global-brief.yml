@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: btc-repo-writer
+  group: btc-global-brief
   cancel-in-progress: false
 
 jobs:
@@ -35,16 +35,18 @@ jobs:
           git add data/daily/brief.json data/daily/global.json
           if git diff --cached --quiet; then
             echo "No changes"
-          else
-            git commit -m "Update global briefing"
-            for attempt in 1 2 3; do
-              git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
-              echo "Push conflict; retry ${attempt}/3"
-              git rebase --abort 2>/dev/null || true
-              git fetch origin "${GITHUB_REF_NAME}"
-              git rebase "origin/${GITHUB_REF_NAME}"
-              sleep $((attempt * 2))
-            done
-            echo "Failed to push after 3 attempts"
-            exit 1
+            exit 0
           fi
+          git commit -m "Update global briefing"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Brief push conflict; retry ${attempt}/3"
+            git rebase --abort 2>/dev/null || true
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}" || true
+            sleep $((attempt * 3))
+          done
+          echo "Failed to push briefing after 3 attempts"
+          exit 1
