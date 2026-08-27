@@ -3,7 +3,8 @@ name: Strategy Lab 4H Server
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 */4 * * *'
+    # Explicit off-hour minute reduces scheduler congestion.
+    - cron: '23 1,5,9,13,17,21 * * *'
   push:
     branches: [main]
     paths:
@@ -32,26 +33,24 @@ jobs:
           python-version: '3.12'
       - name: Build strategy lab data
         run: python scripts/strategy_lab_server.py
-      - name: Commit lab state safely
+      - name: Commit lab state conflict-safe
         run: |
           set -e
           git config user.name "btc-strategy-lab-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/research/lab-latest.json data/research/lab-history.json
-          if git diff --cached --quiet; then
-            echo "No lab changes"
-            exit 0
-          fi
-          git commit -m "research: update 4H strategy lab"
+          mkdir -p /tmp/btc-lab-state
+          cp data/research/lab-latest.json /tmp/btc-lab-state/lab-latest.json
+          cp data/research/lab-history.json /tmp/btc-lab-state/lab-history.json
           for attempt in 1 2 3; do
-            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
-              exit 0
-            fi
-            echo "Lab push conflict; retry ${attempt}/3"
-            git rebase --abort 2>/dev/null || true
             git fetch origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}" || true
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            cp /tmp/btc-lab-state/lab-latest.json data/research/lab-latest.json
+            cp /tmp/btc-lab-state/lab-history.json data/research/lab-history.json
+            git add data/research/lab-latest.json data/research/lab-history.json
+            if git diff --cached --quiet; then echo "No lab changes"; exit 0; fi
+            git commit -m "research: update 4H strategy lab"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            git reset --hard HEAD~1
             sleep $((attempt * 3))
           done
-          echo "Failed to push lab state after 3 attempts"
           exit 1
