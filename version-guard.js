@@ -1,11 +1,65 @@
-/* BTC Hedge Assistant - deterministic bootstrap + canonical version source */
-(function(){'use strict';
-var loaded={},booted=false,versionObserver=null;
-function load(id,src){return new Promise(function(resolve,reject){var old=document.getElementById(id);if(old){resolve(old);return}var s=document.createElement('script');s.id=id;s.src=src;s.async=false;s.onload=function(){loaded[id]=true;resolve(s)};s.onerror=function(){reject(new Error('load failed: '+src))};document.head.appendChild(s)})}
-function applyVersion(){var cfg=window.BTC_APP_CONFIG||{},v=cfg.version||window.BTC_APP_VERSION||'unknown',title=(cfg.name||'BTC Hedge Assistant')+' v'+v;document.title=title;var hs=document.querySelectorAll('h1');for(var i=0;i<hs.length;i++){if(/BTC Hedge Assistant/i.test(hs[i].textContent||''))hs[i].textContent=title}document.documentElement.dataset.btcAppVersion=v;window.BTC_APP_VERSION=v;return v}
-function retryVersion(){[0,120,450,1200,3000,7000,12000].forEach(function(ms){setTimeout(applyVersion,ms)})}
-function watchVersion(){if(versionObserver||!window.MutationObserver)return;var header=document.querySelector('header')||document.body;if(!header)return;versionObserver=new MutationObserver(function(){var cfg=window.BTC_APP_CONFIG||{},v=cfg.version||window.BTC_APP_VERSION;if(!v)return;var expected=(cfg.name||'BTC Hedge Assistant')+' v'+v,hs=document.querySelectorAll('h1'),wrong=document.title!==expected;for(var i=0;i<hs.length&&!wrong;i++){if(/BTC Hedge Assistant/i.test(hs[i].textContent||'')&&hs[i].textContent!==expected)wrong=true}if(wrong)applyVersion()});versionObserver.observe(header,{subtree:true,childList:true,characterData:true});}
-function boot(){if(booted)return;booted=true;load('btcAppConfig','./app-config.js?ts='+Date.now()).then(function(){applyVersion();retryVersion();watchVersion();return load('btcSafetyCore','./safety-core.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){return load('btcResearchHealthScript','./research-health.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){return load('btcRecoveryV2Ui','./recovery-v2-ui.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){return load('btcReversalIntelligence','./reversal-intelligence.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){return load('btcHedgeRotation','./hedge-rotation.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){return load('btcStartupHealthScript','./startup-health.js?v='+encodeURIComponent(window.BTC_APP_VERSION||'')+'&ts='+Date.now())}).then(function(){applyVersion()}).catch(function(e){console.error('[BTC bootstrap]',e);window.BTC_BOOTSTRAP_ERROR=String(e&&e.message||e)});}
-window.BTCBootstrap={version:function(){return window.BTC_APP_VERSION||null},loaded:loaded,applyVersion:applyVersion,boot:boot};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+/* BTC Hedge Assistant v8.21.0 - canonical deterministic bootstrap */
+(function(){
+'use strict';
+if(window.__BTC_BOOTSTRAP_SINGLETON&&window.BTCBootstrap)return;
+window.__BTC_BOOTSTRAP_SINGLETON=true;
+const loaded={},errors=[],APP='./';
+let bootPromise=null;
+function load(id,src,critical=false){
+  if(loaded[id])return Promise.resolve(loaded[id]);
+  const old=document.getElementById(id);
+  if(old){loaded[id]=old;return Promise.resolve(old)}
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');s.id=id;s.src=src;s.async=false;
+    s.onload=()=>{loaded[id]=s;resolve(s)};
+    s.onerror=()=>{const e=new Error('load failed: '+src);errors.push({id,src,critical,error:e.message});if(critical){window.BTC_BOOTSTRAP_ERROR=e.message;window.BTC_DECISION_ALLOWED=false;reject(e)}else{console.warn('[BTC bootstrap optional]',e.message);resolve(null)}};
+    document.head.appendChild(s);
+  });
+}
+function ver(){return window.BTC_APP_CONFIG?.version||window.BTC_APP_VERSION||'8.21.0'}
+function src(name){return APP+name+'?v='+encodeURIComponent(ver())+'&ts='+Date.now()}
+function applyVersion(){const cfg=window.BTC_APP_CONFIG||{},v=cfg.version||window.BTC_APP_VERSION||'8.21.0',title=(cfg.name||'BTC Hedge Assistant')+' v'+v;document.title=title;document.querySelectorAll('h1').forEach(h=>{if(/BTC Hedge Assistant/i.test(h.textContent||''))h.textContent=title});document.documentElement.dataset.btcAppVersion=v;window.BTC_APP_VERSION=v;return v}
+async function boot(){
+  if(bootPromise)return bootPromise;
+  bootPromise=(async()=>{
+    window.BTC_DECISION_ALLOWED=false;
+    await load('btcAppConfig',APP+'app-config.js?ts='+Date.now(),true);applyVersion();
+    const modules=[
+      ['btcSafetyCore','safety-core.js',true],
+      ['btcMobileLayoutFix','mobile-layout-fix.js',false],
+      ['btcGlobalBrief868','globalbrief-v868.js',false],
+      ['btcAutoTop10','auto-top10.js',false],
+      ['btcTop10History','top10-history.js',false],
+      ['btcOpportunityV2','opportunity-v2.js',false],
+      ['btcSmartSession','smart-session.js',false],
+      ['btcDynamicHedge','dynamic-hedge.js',false],
+      ['btcCycleHedge','cycle-hedge.js',false],
+      ['btcRegimeHedge','regime-hedge.js',true],
+      ['btcPathEnsemble','path-ensemble.js',false],
+      ['btcAdaptiveLearning','adaptive-learning.js',true],
+      ['btcExecutionExit','execution-exit.js',false],
+      ['btcStrategyGovernance','strategy-governance.js',true],
+      ['btcMarketStructure','market-structure.js',false],
+      ['btcTerminalWallet','terminal-wallet.js',true],
+      ['btcRecoveryEngine','recovery-engine.js',true],
+      ['btcStrategyLab','strategy-lab.js',false],
+      ['btcResearchHealth','research-health.js',false],
+      ['btcResearchShadow','research-shadow.js',false],
+      ['btcRecoveryV2Ui','recovery-v2-ui.js',false],
+      ['btcReversalIntelligence','reversal-intelligence.js',false],
+      ['btcHedgeRotation','hedge-rotation.js',false],
+      ['btcStabilityGuard','stability-guard.js',true],
+      ['btcStartupHealth','startup-health.js',true]
+    ];
+    for(const [id,name,critical] of modules)await load(id,src(name),critical);
+    applyVersion();
+    window.BTC_BOOTSTRAP_ERROR='';
+    document.dispatchEvent(new CustomEvent('btc-bootstrap-ready',{detail:{version:ver(),loaded:Object.keys(loaded),errors:[...errors]}}));
+    return true;
+  })().catch(e=>{window.BTC_BOOTSTRAP_ERROR=String(e?.message||e);window.BTC_DECISION_ALLOWED=false;console.error('[BTC bootstrap]',e);throw e});
+  return bootPromise;
+}
+function status(){return{version:ver(),ready:!!bootPromise&&!window.BTC_BOOTSTRAP_ERROR,loaded:Object.keys(loaded),errors:[...errors],error:window.BTC_BOOTSTRAP_ERROR||''}}
+window.BTCBootstrap={version:ver,loaded,errors,applyVersion,boot,status};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(()=>{}),{once:true});else boot().catch(()=>{});
 })();
