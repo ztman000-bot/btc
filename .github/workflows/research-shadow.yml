@@ -3,7 +3,6 @@ name: BTC 24H Research Shadow
 on:
   workflow_dispatch:
   schedule:
-    # Explicit staggered minutes reduce GitHub scheduler congestion near :00.
     - cron: '7,22,37,52 * * * *'
   push:
     branches: [main]
@@ -38,24 +37,40 @@ jobs:
         run: |
           python scripts/research_shadow.py
           python scripts/research_v2_enhance.py
+      - name: Write scheduler heartbeat
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          d={
+            'at': datetime.now(timezone.utc).isoformat(),
+            'event': os.getenv('GITHUB_EVENT_NAME','unknown'),
+            'workflow': os.getenv('GITHUB_WORKFLOW','BTC 24H Research Shadow'),
+            'runId': os.getenv('GITHUB_RUN_ID'),
+            'runNumber': os.getenv('GITHUB_RUN_NUMBER'),
+            'sha': os.getenv('GITHUB_SHA')
+          }
+          with open('data/research/research-heartbeat.json','w',encoding='utf-8') as f:
+            json.dump(d,f,ensure_ascii=False,indent=2)
+          PY
       - name: Commit research state conflict-safe
         run: |
           set -e
           git config user.name "btc-research-bot"
           git config user.email "actions@users.noreply.github.com"
-
           mkdir -p /tmp/btc-research-state
           cp data/research/latest.json /tmp/btc-research-state/latest.json
           cp data/research/shadow-history.json /tmp/btc-research-state/shadow-history.json
           cp data/research/regime-state.json /tmp/btc-research-state/regime-state.json
-
+          cp data/research/research-heartbeat.json /tmp/btc-research-state/research-heartbeat.json
           for attempt in 1 2 3; do
             git fetch origin "${GITHUB_REF_NAME}"
             git reset --hard "origin/${GITHUB_REF_NAME}"
             cp /tmp/btc-research-state/latest.json data/research/latest.json
             cp /tmp/btc-research-state/shadow-history.json data/research/shadow-history.json
             cp /tmp/btc-research-state/regime-state.json data/research/regime-state.json
-            git add data/research/latest.json data/research/shadow-history.json data/research/regime-state.json
+            cp /tmp/btc-research-state/research-heartbeat.json data/research/research-heartbeat.json
+            git add data/research/latest.json data/research/shadow-history.json data/research/regime-state.json data/research/research-heartbeat.json
             if git diff --cached --quiet; then echo "No research changes"; exit 0; fi
             git commit -m "research: update 24H confirmed-bar shadow state"
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
