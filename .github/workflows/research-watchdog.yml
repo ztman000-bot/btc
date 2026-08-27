@@ -1,0 +1,80 @@
+name: BTC Research Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Redundant recovery path: if primary 15m research is stale, rebuild it.
+    - cron: '41 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: btc-research-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check research freshness
+        id: freshness
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          p='data/research/latest.json'
+          stale=True
+          age_min=10**9
+          try:
+              with open(p,encoding='utf-8') as f: d=json.load(f)
+              ts=d.get('generatedAt') or d.get('enhancedAt')
+              if ts:
+                  t=datetime.fromisoformat(ts.replace('Z','+00:00'))
+                  age_min=(datetime.now(timezone.utc)-t).total_seconds()/60
+                  stale=age_min>45
+          except Exception as e:
+              print('freshness read error:',e)
+          print(f'Research age: {age_min:.1f} min; stale={stale}')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'stale={str(stale).lower()}\n')
+          PY
+      - name: Rebuild stale research
+        if: steps.freshness.outputs.stale == 'true'
+        run: |
+          python scripts/research_shadow.py
+          python scripts/research_v2_enhance.py
+      - name: Commit recovered research state
+        if: steps.freshness.outputs.stale == 'true'
+        run: |
+          set -e
+          git config user.name "btc-research-watchdog"
+          git config user.email "actions@users.noreply.github.com"
+          mkdir -p /tmp/btc-watchdog-state
+          cp data/research/latest.json /tmp/btc-watchdog-state/latest.json
+          cp data/research/shadow-history.json /tmp/btc-watchdog-state/shadow-history.json
+          cp data/research/regime-state.json /tmp/btc-watchdog-state/regime-state.json
+          for attempt in 1 2 3; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            cp /tmp/btc-watchdog-state/latest.json data/research/latest.json
+            cp /tmp/btc-watchdog-state/shadow-history.json data/research/shadow-history.json
+            cp /tmp/btc-watchdog-state/regime-state.json data/research/regime-state.json
+            git add data/research/latest.json data/research/shadow-history.json data/research/regime-state.json
+            if git diff --cached --quiet; then echo "No watchdog changes"; exit 0; fi
+            git commit -m "research: watchdog recover stale 24H state"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            git reset --hard HEAD~1
+            sleep $((attempt * 3))
+          done
+          exit 1
