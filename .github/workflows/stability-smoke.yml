@@ -49,14 +49,17 @@ jobs:
           boot=Path('version-guard.js').read_text(encoding='utf-8')
           sw=Path('sw.js').read_text(encoding='utf-8')
           stab=Path('stability-guard.js').read_text(encoding='utf-8')
-          assert "version:'8.21.0'" in cfg, 'canonical version mismatch'
+          shell=Path('v850-shell.js').read_text(encoding='utf-8')
+          m=re.search(r"version:'(8\.21\.\d+)'",cfg)
+          assert m, 'canonical version must remain on v8.21 patch line'
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
           for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
           assert 'stability-guard.js' in sw, 'service worker missing stability guard'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
+          assert 'LEGACY_STATIC_NODES' in shell and 'quarantineLegacy' in shell and 'legacyDashboard' in shell, 'legacy home quarantine missing'
           legacy=Path('index.html').read_text(encoding='utf-8')
           if re.search(r'\bchanged\s*=\s*False\b|\bchanged\s*=\s*True\b', legacy):
               print('WARNING: legacy scanner source still contains Python-style booleans; runtime Stability Guard patches this path.')
-          print('stability architecture assertions passed')
+          print('stability architecture assertions passed for',m.group(1))
           PY
