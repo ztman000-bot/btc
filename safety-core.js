@@ -1,6 +1,6 @@
-/* BTC Hedge Assistant v8.20.2 - Central Safety / Guard Core */
+/* BTC Hedge Assistant v8.20.3 - Central Safety / Guard Core */
 (function(){'use strict';
-const V='8.20.2',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
+const V='8.20.3',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
 const N=v=>Number.isFinite(Number(v))?Number(v):null;
 function P(){try{return typeof pos==='function'?pos():(window.pos?.())}catch(e){return null}}
 function M(){try{return typeof market!=='undefined'?market:(window.market||{})}catch(e){return window.market||{}}}
@@ -19,8 +19,10 @@ function researchPosition(){const d=P(),r=RESEARCH_CFG?.position;if(!d||!r)retur
 function current(){const sg=serverGuard(),ag=adaptiveGuard(),rp=researchPosition(),fresh=serverFresh(),operating=Math.max(HARD,sg||0,ag||0);return{version:V,hard:HARD,operating,server:sg,adaptive:ag,serverFresh:fresh,researchPositionMatched:rp.matched,researchPositionKnown:rp.known,researchPosition:rp,serverResearchUsable:fresh&&rp.matched,source:sg&&ag?'SERVER+ADAPTIVE':sg?'SERVER':ag?'ADAPTIVE':'HARD_ONLY',at:Date.now()}}
 function healthAllowed(){return window.BTC_DECISION_ALLOWED!==false&&!window.BTC_BOOTSTRAP_ERROR}
 function validate(d,p=price(),s){const g=current(),dist=distance(d,p,s);return{allowed:healthAllowed()&&Number.isFinite(dist)&&dist>=g.operating,healthAllowed:healthAllowed(),distance:dist,guard:g.operating,hard:g.hard,source:g.source,researchPositionMatched:g.researchPositionMatched,serverResearchUsable:g.serverResearchUsable}}
-async function fetchJson(urls){let last='';for(const u of urls){try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){last=String(e?.message||e)}}throw new Error(last||'fetch failed')}
-async function refresh(){try{SERVER=await fetchJson(['./data/research/latest.json?ts='+Date.now(),'/btc/data/research/latest.json?ts='+Date.now()]);try{RESEARCH_CFG=await fetchJson(['./data/research/config.json?ts='+Date.now(),'/btc/data/research/config.json?ts='+Date.now()])}catch(e){}LAST_FETCH=Date.now();FETCH_ERR='';document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()}));return SERVER}catch(e){FETCH_ERR=String(e?.message||e);return null}}
+async function getJson(u){const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+function stamp(x){return Date.parse(x?.generatedAt||x?.enhancedAt||x?.at||'')||0}
+async function fetchFreshest(urls){const ok=[],es=[];await Promise.all(urls.map(async u=>{try{ok.push(await getJson(u))}catch(e){es.push(String(e?.message||e))}}));if(!ok.length)throw new Error(es.join(' / '));ok.sort((a,b)=>stamp(b)-stamp(a));return ok[0]}
+async function refresh(){const ts=Date.now();try{SERVER=await fetchFreshest(['./data/research/latest.json?ts='+ts,'/btc/data/research/latest.json?ts='+ts,'https://raw.githubusercontent.com/ztman000-bot/btc/main/data/research/latest.json?ts='+ts]);try{RESEARCH_CFG=await fetchFreshest(['./data/research/config.json?ts='+ts,'/btc/data/research/config.json?ts='+ts,'https://raw.githubusercontent.com/ztman000-bot/btc/main/data/research/config.json?ts='+ts])}catch(e){}LAST_FETCH=Date.now();FETCH_ERR='';document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()}));return SERVER}catch(e){FETCH_ERR=String(e?.message||e);return null}}
 function status(){return{...current(),lastFetch:LAST_FETCH,error:FETCH_ERR,serverEngine:SERVER?.engineVersion||null}}
 window.BTCSafetyCore={version:V,HARD,current,validate,distance,mmr,liqFor,state0,status,refresh,server:()=>SERVER,researchConfig:()=>RESEARCH_CFG,researchPosition};
 refresh();setInterval(refresh,60000);document.addEventListener('btc-research-health',()=>document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()})));
