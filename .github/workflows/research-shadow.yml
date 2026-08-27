@@ -3,7 +3,8 @@ name: BTC 24H Research Shadow
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    # Explicit staggered minutes reduce GitHub scheduler congestion near :00.
+    - cron: '7,22,37,52 * * * *'
   push:
     branches: [main]
     paths:
@@ -11,6 +12,7 @@ on:
       - 'scripts/research_v2_enhance.py'
       - 'data/research/config.json'
       - '.github/workflows/research-shadow.yml'
+      - '.github/workflows/research-watchdog.yml'
 
 permissions:
   contents: write
