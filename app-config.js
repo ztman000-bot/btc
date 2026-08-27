@@ -2,9 +2,9 @@
 (function(){'use strict';
   var CONFIG=Object.freeze({
     name:'BTC Hedge Assistant',
-    version:'8.20.1',
-    architecture:'Safety Integration + Confirmed-Bar Evidence + Regime Champion 2.1 + Research Health + Symmetric Hedge Rotation + Reversal Intelligence',
-    safety:{hardGuardUsd:10000,failSafeOnCriticalModuleLoss:true,confirmedBarEvidence:true,researchFreshMinutes:45,researchStoppedMinutes:120},
+    version:'8.20.2',
+    architecture:'Safety Integration + Confirmed-Bar Evidence + Regime Champion 2.1 + Unified Research Health + Symmetric Hedge Rotation + Reversal Intelligence',
+    safety:{hardGuardUsd:10000,failSafeOnCriticalModuleLoss:true,confirmedBarEvidence:true,researchFreshMinutes:45,researchStoppedMinutes:120,labFreshMinutes:300,labStoppedMinutes:600},
     modules:{
       safety:'Central Safety / Guard Core',
       recovery:'Recovery Engine 2.0',
@@ -12,7 +12,7 @@
       regime:'5-Regime Champion 2.1',
       guard:'Dynamic 10K Guard 2.1',
       governance:'Champion–Challenger 2.0',
-      researchHealth:'Research Health / Promotion Freeze',
+      researchHealth:'Unified Research Health / Promotion Freeze',
       rotation:'Symmetric Profit Transfer / Hedge Rotation',
       reversal:'Reversal Intelligence Engine'
     }
