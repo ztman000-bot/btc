@@ -1,6 +1,7 @@
-/* BTC Hedge Assistant v8.20.3 - Central Safety / Guard Core */
+/* BTC Hedge Assistant v8.21.0 - Central Safety / Guard Core */
 (function(){'use strict';
-const V='8.20.3',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
+if(window.__BTC_SAFETY_CORE_SINGLETON&&window.BTCSafetyCore)return;window.__BTC_SAFETY_CORE_SINGLETON=true;
+const V='2.1',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
 const N=v=>Number.isFinite(Number(v))?Number(v):null;
 function P(){try{return typeof pos==='function'?pos():(window.pos?.())}catch(e){return null}}
 function M(){try{return typeof market!=='undefined'?market:(window.market||{})}catch(e){return window.market||{}}}
@@ -25,5 +26,5 @@ async function fetchFreshest(urls){const ok=[],es=[];await Promise.all(urls.map(
 async function refresh(){const ts=Date.now();try{SERVER=await fetchFreshest(['./data/research/latest.json?ts='+ts,'/btc/data/research/latest.json?ts='+ts,'https://raw.githubusercontent.com/ztman000-bot/btc/main/data/research/latest.json?ts='+ts]);try{RESEARCH_CFG=await fetchFreshest(['./data/research/config.json?ts='+ts,'/btc/data/research/config.json?ts='+ts,'https://raw.githubusercontent.com/ztman000-bot/btc/main/data/research/config.json?ts='+ts])}catch(e){}LAST_FETCH=Date.now();FETCH_ERR='';document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()}));return SERVER}catch(e){FETCH_ERR=String(e?.message||e);return null}}
 function status(){return{...current(),lastFetch:LAST_FETCH,error:FETCH_ERR,serverEngine:SERVER?.engineVersion||null}}
 window.BTCSafetyCore={version:V,HARD,current,validate,distance,mmr,liqFor,state0,status,refresh,server:()=>SERVER,researchConfig:()=>RESEARCH_CFG,researchPosition};
-refresh();setInterval(refresh,60000);document.addEventListener('btc-research-health',()=>document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()})));
+refresh();window.__BTC_SAFETY_CORE_TIMER=setInterval(refresh,60000);document.addEventListener('btc-research-health',()=>document.dispatchEvent(new CustomEvent('btc-safety-core',{detail:current()})));
 })();
