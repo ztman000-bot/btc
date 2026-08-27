@@ -6,9 +6,10 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG_PATH=os.path.join(ROOT,'data','research','config.json')
 OUT_PATH=os.path.join(ROOT,'data','research','latest.json')
 HIST_PATH=os.path.join(ROOT,'data','research','shadow-history.json')
+FOUR_H_MS=4*60*60*1000
 
 def jget(url, timeout=20):
-    req=urllib.request.Request(url,headers={'User-Agent':'btc-hedge-research/8.18'})
+    req=urllib.request.Request(url,headers={'User-Agent':'btc-hedge-research/8.20'})
     with urllib.request.urlopen(req,timeout=timeout) as r:return json.loads(r.read().decode())
 
 def load(path, default):
@@ -101,6 +102,12 @@ def market_data():
         oi={'openInterest':der.get('open_interest') or 0}
         return bars,premium,oi,'Kraken 4H OHLC + Deribit BTC-PERPETUAL public API'
 
+def closed_evidence_bar(bars):
+    now_ms=int(datetime.now(timezone.utc).timestamp()*1000)
+    for b in reversed(bars):
+        if int(b[0])+FOUR_H_MS<=now_ms:return b
+    return bars[-2] if len(bars)>1 else bars[-1]
+
 def regime(closes):
     e20=ema(closes,20);e50=ema(closes,50);p=closes[-1];score=50
     score+=12 if p>e20[-1] else -12;score+=12 if e20[-1]>e50[-1] else -12
@@ -159,24 +166,28 @@ def actions_eval(cfg,p,ends,cost,funding):
 
 def main():
     cfg=load(CFG_PATH,{});prev=load(OUT_PATH,{});hist=load(HIST_PATH,{'items':[]})
-    bars,premium,oi,source=market_data();cl=[x[4] for x in bars];p=cl[-1];atr=atr_pct(bars);cost=one_way(cfg,atr);rg=regime(cl);ms=structure(premium,oi,prev);wf=robust_search(cl,cost,cfg['research']['oosFolds'])
+    bars,premium,oi,source=market_data();cl=[x[4] for x in bars];p=cl[-1];evidence_bar=closed_evidence_bar(bars);evidence_time=int(evidence_bar[0]);evidence_price=float(evidence_bar[4])
+    atr=atr_pct(bars);cost=one_way(cfg,atr);rg=regime(cl);ms=structure(premium,oi,prev);wf=robust_search(cl,cost,cfg['research']['oosFolds'])
     champ=wf.get('best',{'name':'BASE'});gov=bool(wf.get('approved'));trend=(rg-50)/50;blend=max(-1,min(1,.82*trend+.18*ms['bias']))
     ends=mc_paths(cl,p,cfg['research']['monteCarloPaths'],cfg['research']['monteCarloSteps'],blend);ranked=actions_eval(cfg,p,ends,cost,ms['funding']);model=ranked[0];executable=model
     if model['id'] not in ('HOLD','EXIT_ALL') and (not gov or not (rg>=72 or rg<=28)):executable=next(x for x in ranked if x['id']=='HOLD')
     current_close=terminal(apply_action(('H',0,'HOLD'),cfg,p,cost),cfg,p,cost,ms['funding'])
     if model['id']=='EXIT_ALL' and current_close<cfg['goals']['targetWallet']:executable=next(x for x in ranked if x['id']=='HOLD')
-    now=datetime.now(timezone.utc).isoformat();prior=(hist.get('items') or [])[-1] if hist.get('items') else None;forward=None
-    if prior:
-        ret=p/prior['price']-1;aid=prior.get('executable','HOLD');direction=1 if aid.startswith('SHORT_') else (-1 if aid.startswith('LONG_') else 0)
-        forward={'since':prior['at'],'priceReturn':ret,'priorAction':aid,'directionalScore':direction*ret}
-    item={'at':now,'price':p,'regimeScore':rg,'champion':champ.get('name'),'governanceApproved':gov,'modelBest':model['id'],'executable':executable['id'],'expectedWallet':executable['expectedWallet'],'recoveryProbability':executable['recoveryProbability'],'forwardFromPrior':forward}
-    items=((hist.get('items') or [])+[item])[-cfg['research']['maxShadowHistory']:];scores=[x.get('forwardFromPrior',{}).get('directionalScore') for x in items if x.get('forwardFromPrior') and x['forwardFromPrior'].get('directionalScore') is not None]
-    positive=sum(1 for x in scores if x>0);shadow={'samples':len(items),'directionalEvaluations':len(scores),'directionalWinRate':positive/len(scores) if scores else None,'avgDirectionalScore':statistics.mean(scores) if scores else None}
-    out={'schemaVersion':'1.0','engineVersion':'8.18.0','generatedAt':now,'source':source+'; no account keys; no real orders','market':{'price':p,'atr4hPct':atr,'regimeScore':rg,'bars4h':len(bars)},'marketStructure':ms,'optimizer':wf,'executionReality':{'oneWayCost':cost},'monteCarlo':{'paths':len(ends),'steps':cfg['research']['monteCarloSteps'],'terminalPriceP10':percentile(ends,.10),'terminalPriceMedian':percentile(ends,.50),'terminalPriceP90':percentile(ends,.90)},'terminalWallet':{'rankedActions':ranked,'modelBest':model,'executable':executable,'currentNetClose':current_close,'targetWallet':cfg['goals']['targetWallet']},'shadow':shadow,'lastDecision':item}
-    save(OUT_PATH,out);save(HIST_PATH,{'schemaVersion':'1.0','items':items})
-    print(json.dumps({'source':source,'bars':len(bars),'price':p,'regime':rg,'champion':champ.get('name'),'approved':gov,'best':model['id'],'executable':executable['id'],'shadowSamples':len(items)},ensure_ascii=False))
+    now=datetime.now(timezone.utc).isoformat();old_items=hist.get('items') or [];prior=old_items[-1] if old_items else None
+    new_evidence=(prior is None) or int(prior.get('evidenceBarTime') or -1)!=evidence_time;forward=None
+    if prior and new_evidence:
+        pp=float(prior.get('evidencePrice') or prior.get('price') or evidence_price);ret=evidence_price/pp-1 if pp else 0;aid=prior.get('executable','HOLD');direction=1 if aid.startswith('SHORT_') else (-1 if aid.startswith('LONG_') else 0)
+        forward={'since':prior['at'],'priceReturn':ret,'priorAction':aid,'directionalScore':direction*ret,'fromEvidenceBarTime':prior.get('evidenceBarTime'),'toEvidenceBarTime':evidence_time}
+    item={'at':now,'price':p,'evidenceBarTime':evidence_time,'evidencePrice':evidence_price,'newEvidence':new_evidence,'regimeScore':rg,'champion':champ.get('name'),'governanceApproved':gov,'modelBest':model['id'],'executable':executable['id'],'expectedWallet':executable['expectedWallet'],'recoveryProbability':executable['recoveryProbability'],'forwardFromPrior':forward}
+    items=old_items
+    if new_evidence:items=(old_items+[item])[-cfg['research']['maxShadowHistory']:]
+    scores=[x.get('forwardFromPrior',{}).get('directionalScore') for x in items if x.get('forwardFromPrior') and x['forwardFromPrior'].get('directionalScore') is not None]
+    positive=sum(1 for x in scores if x>0);shadow={'samples':len(items),'directionalEvaluations':len(scores),'directionalWinRate':positive/len(scores) if scores else None,'avgDirectionalScore':statistics.mean(scores) if scores else None,'confirmedBarOnly':True,'evidenceBarTime':evidence_time}
+    out={'schemaVersion':'1.1','engineVersion':'8.20.0-base','generatedAt':now,'source':source+'; no account keys; no real orders','market':{'price':p,'atr4hPct':atr,'regimeScore':rg,'bars4h':len(bars),'evidenceBarTime':evidence_time,'evidencePrice':evidence_price},'marketStructure':ms,'optimizer':wf,'executionReality':{'oneWayCost':cost},'monteCarlo':{'paths':len(ends),'steps':cfg['research']['monteCarloSteps'],'terminalPriceP10':percentile(ends,.10),'terminalPriceMedian':percentile(ends,.50),'terminalPriceP90':percentile(ends,.90)},'terminalWallet':{'rankedActions':ranked,'modelBest':model,'executable':executable,'currentNetClose':current_close,'targetWallet':cfg['goals']['targetWallet']},'shadow':shadow,'lastDecision':item}
+    save(OUT_PATH,out);save(HIST_PATH,{'schemaVersion':'1.1','confirmedBarOnly':True,'items':items})
+    print(json.dumps({'source':source,'bars':len(bars),'price':p,'regime':rg,'champion':champ.get('name'),'approved':gov,'best':model['id'],'executable':executable['id'],'newEvidence':new_evidence,'evidenceBarTime':evidence_time,'shadowSamples':len(items)},ensure_ascii=False))
 
 if __name__=='__main__':
     try:main()
     except Exception as e:
-        now=datetime.now(timezone.utc).isoformat();save(OUT_PATH,{'schemaVersion':'1.0','engineVersion':'8.18.0','generatedAt':now,'status':'error','error':str(e),'source':'No orders; research runner error'});raise
+        now=datetime.now(timezone.utc).isoformat();save(OUT_PATH,{'schemaVersion':'1.1','engineVersion':'8.20.0-base','generatedAt':now,'status':'error','error':str(e),'source':'No orders; research runner error'});raise
