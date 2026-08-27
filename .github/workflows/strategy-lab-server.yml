@@ -3,7 +3,7 @@ name: Strategy Lab 4H Server
 on:
   workflow_dispatch:
   schedule:
-    - cron: '12 0,4,8,12,16,20 * * *'
+    - cron: '17 */4 * * *'
   push:
     branches: [main]
     paths:
