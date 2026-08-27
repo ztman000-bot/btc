@@ -1,24 +1,65 @@
-/* BTC Hedge Assistant v8.19.0 - Server Strategy Lab V2 */
+/* BTC Hedge Assistant v8.20.3 - compatibility updater bootstrap */
 (function(){
 'use strict';
-var VERSION='8.19.0',B='8190',research=null,researchHistory=null,researchErr='';
+var VERSION='8.20.3',B='8203';
 function $(id){return document.getElementById(id)}
-function patchVersion(){try{document.title='BTC Hedge Assistant v'+VERSION}catch(e){}var hs=document.querySelectorAll('h1');for(var i=0;i<hs.length;i++)if(/BTC Hedge Assistant/i.test(hs[i].textContent||''))hs[i].textContent='BTC Hedge Assistant v'+VERSION;window.BTC_APP_VERSION=VERSION}
-function addScript(id,name){if($(id))return;var s=document.createElement('script');s.id=id;s.src='./'+name+'?v='+B+'&ts='+Date.now();s.async=false;s.onerror=function(){console.warn('module load failed',name)};document.body.appendChild(s)}
-function loadCore(){var m=[['btcVersionGuard8190','version-guard.js'],['btcMobileLayoutFix8190','mobile-layout-fix.js'],['btcStrategyLab8190','strategy-lab.js'],['btcGlobalBrief868','globalbrief-v868.js'],['btcAutoTop10872','auto-top10.js'],['btcTop10History873','top10-history.js'],['btcOpportunityV2881','opportunity-v2.js'],['btcSmartSession882','smart-session.js'],['btcDynamicHedge891','dynamic-hedge.js'],['btcCycleHedge8100','cycle-hedge.js'],['btcRegimeHedge8110','regime-hedge.js'],['btcPathEnsemble8120','path-ensemble.js'],['btcAdaptiveLearning8190','adaptive-learning.js'],['btcExecutionExit8190','execution-exit.js'],['btcStrategyGovernance8190','strategy-governance.js'],['btcMarketStructure8190','market-structure.js'],['btcTerminalWallet8190','terminal-wallet.js'],['btcRecoveryEngine8190','recovery-engine.js']];for(var i=0;i<m.length;i++)addScript(m[i][0],m[i][1])}
-function home(){return $('v850HomePane')||document.querySelector('main>.v853Active')||document.querySelector('main')}
-function money(x){x=Number(x);return isFinite(x)?'$'+Math.round(x).toLocaleString():'--'}
-function pct(x){x=Number(x);return isFinite(x)?(x*100).toFixed(1)+'%':'--'}
-function label(id){var m={HOLD:'관망','SHORT_0.025':'숏 0.025 축소','SHORT_0.050':'숏 0.050 축소','LONG_0.025':'롱 0.025 축소','LONG_0.050':'롱 0.050 축소',EXIT_ALL:'양 포지션 전량종료'};return m[id]||id||'--'}
-function ageMin(ts){if(!ts)return Infinity;return Math.max(0,(Date.now()-new Date(ts).getTime())/60000)}
-function age(ts){var m=ageMin(ts);if(!isFinite(m))return'시각 없음';if(m<2)return'방금 갱신';if(m<120)return Math.round(m)+'분 전';return(m/60).toFixed(1)+'시간 전'}
-function ensureResearchCard(){var p=home();if(!p)return null;var c=$('researchShadowCard');if(!c){c=document.createElement('div');c.id='researchShadowCard';c.className='card'}c.classList.remove('v853Page','v852Page','v851Page','tabPane');c.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0 0 10px 0!important';var a=$('nextNow');a=a&&a.closest?a.closest('.nextActionCard'):null;if(c.parentNode!==p){if(a&&a.parentNode===p)a.parentNode.insertBefore(c,a.nextSibling);else p.insertBefore(c,p.firstChild)}return c}
-function healthInfo(){var d=research||{},h=researchHistory||{},items=Array.isArray(h.items)?h.items.slice():[];items.sort(function(a,b){return new Date(a.at)-new Date(b.at)});var am=ageMin(d.generatedAt),gap=null;if(items.length>1)gap=(new Date(items[items.length-1].at)-new Date(items[items.length-2].at))/60000;var cutoff=Date.now()-24*60*60000,r24=items.filter(function(x){return new Date(x.at).getTime()>=cutoff}).length;var state='normal',title='✅ Research Health 정상',cls='okbox';if(am>90||(gap!=null&&gap>120)){state='stale';title='🔴 Research 중단 의심';cls='notice'}else if(am>45||(gap!=null&&gap>45)){state='delay';title='🟡 Research 실행 지연';cls='warnbox'}var sh=(d.shadow||{}).samples||0;var sync=items.length?sh===items.length:null;return{state:state,title:title,cls:cls,ageMinutes:am,gap:gap,runs24:r24,items:items.length,samples:sh,sync:sync}}
-function renderResearch(){var c=ensureResearchCard();if(!c)return;if(!research){c.innerHTML='<div class="row"><div><b>🛰️ 24H Research & Shadow</b><div class="small">24시간 서버 연구 · 실거래 없음</div></div><span class="badge">v'+VERSION+'</span></div><div class="warnbox"><b>'+(researchErr?'⚠️ 서버 연구 데이터 연결 실패':'🟡 서버 연구 데이터 불러오는 중')+'</b><br>'+(researchErr||'GitHub 서버 연구 결과를 직접 읽고 있습니다.')+'</div>';return}var d=research,t=d.terminalWallet||{},sh=d.shadow||{},mc=d.monteCarlo||{},op=d.optimizer||{},ms=d.marketStructure||{},exe=t.executable||{},best=t.modelBest||{},hi=healthInfo();var gapText=hi.gap==null?'표본 부족':Math.round(hi.gap)+'분';var syncText=hi.sync==null?'확인 중':(hi.sync?'일치':'불일치');c.innerHTML='<div class="row"><div><b>🛰️ 24H Research & Shadow</b><div class="small">앱을 꺼도 서버 연구 지속 · 주문 없음</div></div><span class="badge">v'+VERSION+'</span></div><div class="'+hi.cls+'"><b>'+hi.title+'</b> · '+age(d.generatedAt)+'<br>최근 실행간격 <b>'+gapText+'</b> · 최근24h 성공 <b>'+hi.runs24+'회</b> · 표본/이력 <b>'+hi.samples+'/'+hi.items+' ('+syncText+')</b><br><span class="tiny">15분 스케줄 기준 · 45분 초과 지연 · 90분 초과 중단 의심</span></div><div class="'+(hi.state==='normal'?'okbox':'warnbox')+'"><b>실행판정 '+label(exe.id)+'</b> · 모델 1위 '+label(best.id)+'<br>서버 Champion <b>'+((op.best&&op.best.name)||'BASE')+'</b> · Governance '+(op.approved?'승인':'보수화')+'</div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">Shadow 표본</div><b>'+(sh.samples||0)+'회</b><div class="tiny">Forward '+(sh.directionalEvaluations||0)+'회</div></div><div class="kpi"><div class="small">Forward 승률</div><b>'+(sh.directionalWinRate==null?'대기':pct(sh.directionalWinRate))+'</b></div><div class="kpi"><div class="small">Research Health</div><b>'+(hi.state==='normal'?'정상':hi.state==='delay'?'지연':'점검 필요')+'</b><div class="tiny">마지막 '+age(d.generatedAt)+'</div></div></div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">기대 최종 Wallet</div><b>'+money(exe.expectedWallet)+'</b></div><div class="kpi"><div class="small">Recovery 확률</div><b>'+pct(exe.recoveryProbability)+'</b></div><div class="kpi"><div class="small">최악 MC Wallet</div><b>'+money(exe.worst)+'</b></div></div><div class="grid3" style="margin-top:8px"><div class="kpi"><div class="small">Monte Carlo</div><b>'+(mc.paths||0)+'경로</b></div><div class="kpi"><div class="small">시장 과열</div><b>'+(ms.heat==null?'--':ms.heat)+'/100</b></div><div class="kpi"><div class="small">현재 순청산가치</div><b>'+money(t.currentNetClose)+'</b></div></div>'}
-function getJson(url){return fetch(url+'?ts='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+' '+url);return r.json()})}
-function fetchResearch(){ensureResearchCard();Promise.all([getJson('./data/research/latest.json'),getJson('./data/research/shadow-history.json')]).then(function(all){research=all[0];researchHistory=all[1];researchErr='';renderResearch()}).catch(function(e){researchErr=String(e&&e.message||e);renderResearch()})}
-function tick(){patchVersion();loadCore();ensureResearchCard();renderResearch();try{if(window.BTCVersionGuard&&window.BTCVersionGuard.patch)window.BTCVersionGuard.patch()}catch(e){}try{if(window.BTCMobileLayoutFix&&window.BTCMobileLayoutFix.repair)window.BTCMobileLayoutFix.repair()}catch(e){}try{if(window.BTCStrategyLab&&window.BTCStrategyLab.render)window.BTCStrategyLab.render()}catch(e){}}
-function boot(){patchVersion();loadCore();ensureResearchCard();renderResearch();fetchResearch();[200,500,1000,2000,4000,8000,15000].forEach(function(ms){setTimeout(tick,ms)});setInterval(tick,5000);setInterval(fetchResearch,60000)}
+function patchVersion(){
+  try{document.title='BTC Hedge Assistant v'+VERSION}catch(e){}
+  var hs=document.querySelectorAll('h1');
+  for(var i=0;i<hs.length;i++){
+    if(/BTC Hedge Assistant/i.test(hs[i].textContent||''))hs[i].textContent='BTC Hedge Assistant v'+VERSION;
+  }
+  window.BTC_APP_VERSION=VERSION;
+}
+function addScript(id,name){
+  if($(id))return;
+  var s=document.createElement('script');
+  s.id=id;
+  s.src='./'+name+'?v='+B+'&ts='+Date.now();
+  s.async=false;
+  s.onerror=function(){console.warn('module load failed',name)};
+  document.body.appendChild(s);
+}
+function loadCore(){
+  var m=[
+    ['btcVersionGuard8203','version-guard.js'],
+    ['btcMobileLayoutFix8203','mobile-layout-fix.js'],
+    ['btcStrategyLab8203','strategy-lab.js'],
+    ['btcGlobalBrief868','globalbrief-v868.js'],
+    ['btcAutoTop10872','auto-top10.js'],
+    ['btcTop10History873','top10-history.js'],
+    ['btcOpportunityV2881','opportunity-v2.js'],
+    ['btcSmartSession882','smart-session.js'],
+    ['btcDynamicHedge891','dynamic-hedge.js'],
+    ['btcCycleHedge8100','cycle-hedge.js'],
+    ['btcRegimeHedge8110','regime-hedge.js'],
+    ['btcPathEnsemble8120','path-ensemble.js'],
+    ['btcAdaptiveLearning8203','adaptive-learning.js'],
+    ['btcExecutionExit8203','execution-exit.js'],
+    ['btcStrategyGovernance8203','strategy-governance.js'],
+    ['btcMarketStructure8203','market-structure.js'],
+    ['btcTerminalWallet8203','terminal-wallet.js'],
+    ['btcRecoveryEngine8203','recovery-engine.js'],
+    ['btcResearchHealth8203','research-health.js'],
+    ['btcResearchShadow8203','research-shadow.js'],
+    ['btcSafetyCore8203','safety-core.js']
+  ];
+  for(var i=0;i<m.length;i++)addScript(m[i][0],m[i][1]);
+}
+function healModernUI(){
+  try{if(window.BTCResearchHealth&&window.BTCResearchHealth.refresh)window.BTCResearchHealth.refresh()}catch(e){}
+  try{if(window.BTCResearchShadow&&window.BTCResearchShadow.heal)window.BTCResearchShadow.heal()}catch(e){}
+  try{if(window.BTCVersionGuard&&window.BTCVersionGuard.patch)window.BTCVersionGuard.patch()}catch(e){}
+  try{if(window.BTCMobileLayoutFix&&window.BTCMobileLayoutFix.repair)window.BTCMobileLayoutFix.repair()}catch(e){}
+  try{if(window.BTCStrategyLab&&window.BTCStrategyLab.render)window.BTCStrategyLab.render()}catch(e){}
+}
+function tick(){patchVersion();loadCore();healModernUI()}
+function boot(){
+  patchVersion();
+  loadCore();
+  [200,500,1000,2000,4000].forEach(function(ms){setTimeout(tick,ms)});
+  setInterval(function(){patchVersion();healModernUI()},15000);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.BTCUpdater={version:VERSION,check:function(){return Promise.resolve(false)},mode:'server-strategy-lab-v2'};window.BTCResearchBootstrap={version:VERSION,heal:renderResearch,refresh:fetchResearch,status:function(){return research},health:healthInfo};
+window.BTCUpdater={version:VERSION,check:function(){return Promise.resolve(false)},mode:'v8.20.3-modern-ui-compat'};
 })();
