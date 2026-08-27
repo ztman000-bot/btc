@@ -1,4 +1,4 @@
-const C='btc-hedge-v8-21-0-stability-20260828';
+const C='btc-hedge-v8-21-1-legacy-quarantine-20260828';
 const APP_SCRIPTS=['learning.js','updater.js','dailybrief.js','dailybrief-fix.js','v850-shell.js','strategy-lab.js','strategy-position.js','auto-top10.js','top10-history.js','opportunity-v2.js','smart-session.js','dynamic-hedge.js','cycle-hedge.js','regime-hedge.js','path-ensemble.js','recovery-engine.js','adaptive-learning.js','execution-exit.js','strategy-governance.js','market-structure.js','terminal-wallet.js','mobile-layout-fix.js','version-guard.js','app-config.js','safety-core.js','research-health.js','research-shadow.js','recovery-v2-ui.js','reversal-intelligence.js','hedge-rotation.js','stability-guard.js','startup-health.js','globalbrief.js','globalbrief-v868.js'];
 const JSONS=['/data/daily/brief.json','/data/daily/global.json','/data/backtests/hedge_strategy.json','/data/research/latest.json','/data/research/shadow-history.json','/data/research/config.json','/data/research/lab-latest.json','/data/research/research-heartbeat.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C))});
