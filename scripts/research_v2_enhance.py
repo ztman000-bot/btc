@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LATEST=os.path.join(ROOT,'data','research','latest.json')
 HIST=os.path.join(ROOT,'data','research','shadow-history.json')
+STATE=os.path.join(ROOT,'data','research','regime-state.json')
 CFG=os.path.join(ROOT,'data','research','config.json')
 REGIMES=['STRONG_UP','UP','RANGE','DOWN','CRASH_DOWN']
 
@@ -83,8 +84,8 @@ def regime_champions(a,cost):
         result[rg]={**pick,'status':'QUALIFIED' if approved else 'SHADOW','approved':approved,'candidate':best['name'],'baseScore':base['score'],'sample':pick['n']}
     return labels,result
 
-def confirmed_regime(raw,evidence_bar,h):
-    st=h.get('regimeState') or {};cur=st.get('current') or raw;pending=st.get('pending');count=int(st.get('confirmCount') or 0);last=st.get('lastEvidenceBar');is_new=str(evidence_bar)!=str(last)
+def confirmed_regime(raw,evidence_bar,st):
+    cur=st.get('current') or raw;pending=st.get('pending');count=int(st.get('confirmCount') or 0);last=st.get('lastEvidenceBar');is_new=str(evidence_bar)!=str(last)
     if raw==cur:pending=None;count=0
     elif is_new:
         if pending==raw:count+=1
@@ -93,7 +94,7 @@ def confirmed_regime(raw,evidence_bar,h):
     return cur,{'current':cur,'raw':raw,'pending':pending,'confirmCount':count,'lastEvidenceBar':evidence_bar,'updatedAt':datetime.now(timezone.utc).isoformat()}
 
 def main():
-    d=load(LATEST,{});h=load(HIST,{'items':[]});cfg=load(CFG,{})
+    d=load(LATEST,{});h=load(HIST,{'items':[]});cfg=load(CFG,{});persist=load(STATE,{})
     items=h.get('items',[]);active=[]
     for x in items:
         f=x.get('forwardFromPrior') or {};a=f.get('priorAction','HOLD');sc=f.get('directionalScore')
@@ -102,10 +103,9 @@ def main():
     d['shadow2']={'activeEvaluations':n,'holdExcluded':True,'activeWinRate':wins/n if n else None,'avgActiveScore':statistics.mean(scores) if scores else None,'confidenceGrade':grade,'confirmed4hEvidenceOnly':True,'thresholds':{'candidate':30,'validated':100,'trusted':300}}
     try:a=market_closes();labels,champs=regime_champions(a,float((d.get('executionReality') or {}).get('oneWayCost') or .0007));raw=labels[-1]
     except Exception:raw='UNKNOWN';champs={k:{'name':'BASE','status':'LEARNING','sample':0,'approved':False} for k in REGIMES}
-    evidence=(d.get('market') or {}).get('evidenceBarTime');effective,regime_state=confirmed_regime(raw,evidence,h)
+    evidence=(d.get('market') or {}).get('evidenceBarTime');effective,regime_state=confirmed_regime(raw,evidence,persist);save(STATE,regime_state)
     for k,v in champs.items():v['status']='ACTIVE' if k==effective and v.get('approved') else ('SHADOW' if v.get('approved') else v.get('status','LEARNING'))
     d['regimeChampion']={'current':effective,'rawCurrent':raw,'champions':champs,'switchPolicy':{'confirmationBars':2,'hysteresis':True,'confirmed4hOnly':True,'pending':regime_state.get('pending'),'confirmCount':regime_state.get('confirmCount'),'note':'Switch only after two distinct closed 4H evidence bars confirm the new regime.'}}
-    h['schemaVersion']='1.1';h['confirmedBarOnly']=True;h['regimeState']=regime_state;save(HIST,h)
     atr=float((d.get('market') or {}).get('atr4hPct') or .02);hard=float(cfg.get('goals',{}).get('hardGuardUsd',10000));operating=max(hard,12000 if atr<.025 else 15000 if atr<.045 else 18000)
     d['guard2']={'hardFloorUsd':hard,'dynamicOperatingGuardUsd':operating,'atr4hPct':atr,'optimizerMayOverrideHardFloor':False,'source':'ATR 4H + absolute hard floor'}
     tw=d.get('terminalWallet') or {};exe=tw.get('executable') or {};target=float(cfg.get('goals',{}).get('targetWallet',69936.3));cur=float(tw.get('currentNetClose') or 0);exp=float(exe.get('expectedWallet') or cur);p10=float(exe.get('p10') or exp);worst=float(exe.get('worst') or p10);rec=float(exe.get('recoveryProbability') or 0);progress=max(0,min(1,cur/target)) if target else 0;downside=max(0,cur-worst);utility=exp+.25*p10+.15*worst+target*rec*.20-downside*.35
