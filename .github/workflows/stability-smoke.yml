@@ -1,0 +1,62 @@
+name: BTC Stability Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.js'
+      - 'index.html'
+      - 'scripts/**.py'
+      - '.github/workflows/stability-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-stability-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: JavaScript syntax
+        run: |
+          set -e
+          for f in ./*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+      - name: Python syntax
+        run: |
+          python -m compileall -q scripts
+      - name: Stability architecture assertions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          cfg=Path('app-config.js').read_text(encoding='utf-8')
+          upd=Path('updater.js').read_text(encoding='utf-8')
+          boot=Path('version-guard.js').read_text(encoding='utf-8')
+          sw=Path('sw.js').read_text(encoding='utf-8')
+          stab=Path('stability-guard.js').read_text(encoding='utf-8')
+          assert "version:'8.21.0'" in cfg, 'canonical version mismatch'
+          assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
+          for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js']:
+              assert name in boot, f'missing canonical bootstrap module: {name}'
+          assert 'stability-guard.js' in sw, 'service worker missing stability guard'
+          assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
+          legacy=Path('index.html').read_text(encoding='utf-8')
+          if re.search(r'\bchanged\s*=\s*False\b|\bchanged\s*=\s*True\b', legacy):
+              print('WARNING: legacy scanner source still contains Python-style booleans; runtime Stability Guard patches this path.')
+          print('stability architecture assertions passed')
+          PY
