@@ -1,6 +1,7 @@
-/* BTC Hedge Assistant v8.20.3 - Unified Research Health / daemon-aware stale governance gate */
+/* BTC Hedge Assistant v8.21.0 - Unified Research Health / daemon-aware stale governance gate */
 (function(){'use strict';
-const V='8.20.3',ID='btcResearchHealth';let DATA=null,LAB=null,HEART=null,LAST_OK=0,LAB_OK=0,ERR='',LAB_ERR='',HEART_ERR='';
+if(window.__BTC_RESEARCH_HEALTH_SINGLETON&&window.BTCResearchHealth)return;window.__BTC_RESEARCH_HEALTH_SINGLETON=true;
+const V='2.1',ID='btcResearchHealth';let DATA=null,LAB=null,HEART=null,LAST_OK=0,LAB_OK=0,ERR='',LAB_ERR='',HEART_ERR='';
 const CFG=()=>window.BTC_APP_CONFIG?.safety||{};
 function home(){return document.getElementById('v850HomePane')||document.querySelector('main>.v853Active')||document.querySelector('main')}
 function ageOf(x){const t=Date.parse(x?.generatedAt||x?.enhancedAt||x?.at||'');return Number.isFinite(t)?Math.max(0,Date.now()-t):Infinity}
@@ -15,6 +16,6 @@ function ensure(){let c=document.getElementById(ID);if(c)return c;c=document.cre
 function ago(ms){if(!Number.isFinite(ms))return'알 수 없음';const m=ms/60000;if(m<1)return'방금';if(m<60)return Math.round(m)+'분 전';return(m/60).toFixed(1)+'시간 전'}
 function tone(status){return status==='LIVE'?'okbox':status==='STALE'?'warnbox':'notice'}
 function render(){const c=ensure();if(!c)return;const s=publish(),r=s.research,l=s.lab,h=s.heartbeat,headline=r.status==='LIVE'?'24H Research 데이터 정상':r.status==='STALE'?'24H Research 지연 · 승격 동결':'24H Research 중단 · 서버 근거 사용 금지',auto=h.daemonAlive?'DAEMON LIVE':h.automationHealthy?'FALLBACK LIVE':'AUTOMATION DOWN',autoCls=h.automationHealthy?'okbox':'notice',trigger=h.workflow?((h.workflow||'')+' / '+(h.event||'unknown')):'heartbeat 대기';c.innerHTML='<div class="row"><div><b>🔬 Research Health</b><div class="small">24H Daemon · Shadow · Forward/OOS · Monte Carlo · Strategy Lab</div></div><span class="badge">'+r.status+'</span></div><div class="'+autoCls+'"><b>'+auto+'</b><br>최근 자동실행 '+ago(h.ageMs)+(h.loop?' · daemon loop '+h.loop:'')+'</div><div class="'+tone(r.status)+'" style="margin-top:7px"><b>'+headline+'</b><br>24H Research 마지막 갱신 '+ago(r.ageMs)+' · Engine '+(r.engineVersion||'--')+'</div><div class="'+tone(l.status)+'" style="margin-top:7px"><b>Strategy Lab '+l.status+'</b> · 마지막 계산 '+ago(l.ageMs)+'</div><div class="tiny" style="margin-top:7px">최근 Research 실행: '+trigger+' · '+ago(h.ageMs)+(h.runId?' · run '+h.runId:'')+'</div><div class="tiny" style="margin-top:6px">기본 운용은 Self-Chaining Research Daemon이 15분 주기로 지속합니다. GitHub cron은 보조 경로입니다. 24H Research 45분 초과 STALE / 2시간 초과 STOPPED, Strategy Lab 5시간 초과 STALE / 10시간 초과 STOPPED. 오래된 데이터는 승격·서버 MC 실전근거로 사용하지 않습니다. Central Safety/10K Guard는 계속 작동합니다.'+(ERR?' · Research loader: '+ERR:'')+(LAB_ERR?' · Lab loader: '+LAB_ERR:'')+(HEART_ERR?' · heartbeat: '+HEART_ERR:'')+'</div>'}
-function boot(){ensure();refresh();[2500,7000,15000].forEach(ms=>setTimeout(refresh,ms));setInterval(refresh,60000);setInterval(render,15000)}
+function boot(){ensure();refresh();[2500,7000,15000].forEach(ms=>setTimeout(refresh,ms));window.__BTC_RESEARCH_HEALTH_REFRESH_TIMER=setInterval(refresh,60000);window.__BTC_RESEARCH_HEALTH_RENDER_TIMER=setInterval(render,15000)}
 window.BTCResearchHealth={version:V,status:state,refresh,render,data:()=>DATA,labData:()=>LAB,heartbeat:()=>HEART};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
