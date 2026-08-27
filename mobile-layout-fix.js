@@ -1,26 +1,8 @@
-/* BTC Hedge Assistant v8.13.3 - Global Mobile Layout Guard */
+/* BTC Hedge Assistant - Global Mobile Layout Guard 2.0 */
 (()=>{'use strict';
-const V='8.13.3';
-function inject(){if(document.getElementById('btcMobileLayoutFix8133'))return;const s=document.createElement('style');s.id='btcMobileLayoutFix8133';s.textContent=`
-html,body{max-width:100vw!important;overflow-x:hidden!important}
-body>main,main{width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:hidden!important}
-main>.v853Page,main>.v853Active,main>.tabPane,#strategyLab,#v850HomePane,#v850MorePane{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important;overflow-x:hidden!important}
-#strategyLab *,.btcRecoveryCard *{box-sizing:border-box!important;min-width:0}
-#strategyLab .labGrid{width:100%!important;max-width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr)!important}
-#strategyLab .labCard,#strategyLab .labHero{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;overflow:hidden!important}
-#strategyLab .labScroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-#strategyLab .labTable{width:max-content!important;min-width:620px!important;max-width:none!important}
-#strategyLab .labRow{min-width:0!important;overflow:hidden!important}
-#strategyLab .labRow>span,#strategyLab .labRow>b{min-width:0!important;overflow-wrap:anywhere}
-.btcRecoveryCard{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important}
-@media(max-width:620px){
- #strategyLab{padding-left:0!important;padding-right:0!important}
- #strategyLab .labTitle{font-size:21px!important}
- #strategyLab .labHero,#strategyLab .labCard{padding:11px!important}
- #strategyLab .labTable{font-size:10px!important}
- #strategyLab .labMetric{font-size:21px!important}
-}
-`;document.head.appendChild(s)}
+if(window.__BTC_MOBILE_LAYOUT_SINGLETON&&window.BTCMobileLayoutFix)return;window.__BTC_MOBILE_LAYOUT_SINGLETON=true;
+const V='2.0';
+function inject(){if(document.getElementById('btcMobileLayoutFix8133'))return;const s=document.createElement('style');s.id='btcMobileLayoutFix8133';s.textContent=`html,body{max-width:100vw!important;overflow-x:hidden!important}body>main,main{width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:hidden!important}main>.v853Page,main>.v853Active,main>.tabPane,#strategyLab,#v850HomePane,#v850MorePane{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important;overflow-x:hidden!important}#strategyLab *,.btcRecoveryCard *{box-sizing:border-box!important;min-width:0}#strategyLab .labGrid{width:100%!important;max-width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr)!important}#strategyLab .labCard,#strategyLab .labHero{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;overflow:hidden!important}#strategyLab .labScroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}#strategyLab .labTable{width:max-content!important;min-width:620px!important;max-width:none!important}#strategyLab .labRow{min-width:0!important;overflow:hidden!important}#strategyLab .labRow>span,#strategyLab .labRow>b{min-width:0!important;overflow-wrap:anywhere}.btcRecoveryCard{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important}@media(max-width:620px){#strategyLab{padding-left:0!important;padding-right:0!important}#strategyLab .labTitle{font-size:21px!important}#strategyLab .labHero,#strategyLab .labCard{padding:11px!important}#strategyLab .labTable{font-size:10px!important}#strategyLab .labMetric{font-size:21px!important}}`;document.head.appendChild(s)}
 function repair(){inject();document.documentElement.scrollLeft=0;document.body.scrollLeft=0;const p=document.getElementById('strategyLab');if(p){p.style.left='';p.style.right='';p.style.transform='none';p.style.width='100%';p.style.maxWidth='100%';p.style.minWidth='0';p.style.marginLeft='0';p.style.marginRight='0';p.style.overflowX='hidden'}const active=document.querySelector('main>.v853Active');if(active){active.style.left='';active.style.transform='none';active.style.width='100%';active.style.maxWidth='100%';active.style.minWidth='0';active.style.marginLeft='0';active.style.marginRight='0'}}
-function boot(){repair();[250,600,1200,2500,5000,9000].forEach(ms=>setTimeout(repair,ms));new MutationObserver(()=>setTimeout(repair,20)).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',()=>setTimeout(repair,60));window.addEventListener('resize',repair,{passive:true})}
+function boot(){repair();[250,600,1200,2500,5000].forEach(ms=>setTimeout(repair,ms));if(!window.__BTC_MOBILE_LAYOUT_OBSERVER){window.__BTC_MOBILE_LAYOUT_OBSERVER=new MutationObserver(()=>setTimeout(repair,20));window.__BTC_MOBILE_LAYOUT_OBSERVER.observe(document.body,{childList:true,subtree:true})}window.addEventListener('hashchange',()=>setTimeout(repair,60));window.addEventListener('resize',repair,{passive:true})}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.BTCMobileLayoutFix={version:V,repair};})();
