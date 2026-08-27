@@ -1,0 +1,115 @@
+name: BTC 24H Research Daemon
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-daemon.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: btc-research-daemon
+  cancel-in-progress: false
+
+jobs:
+  daemon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Configure git
+        run: |
+          git config user.name "btc-research-daemon"
+          git config user.email "actions@users.noreply.github.com"
+      - name: Run 15m research loop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          for loop in $(seq 1 23); do
+            echo "=== daemon loop ${loop}/23 ==="
+            git fetch origin main
+            git reset --hard origin/main
+
+            python scripts/research_shadow.py
+            python scripts/research_v2_enhance.py
+
+            RUN_LAB=$(python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          p='data/research/lab-latest.json'
+          try:
+              d=json.load(open(p,encoding='utf-8'))
+              t=datetime.fromisoformat((d.get('generatedAt') or '').replace('Z','+00:00'))
+              age=(datetime.now(timezone.utc)-t).total_seconds()/60
+              print('yes' if age>230 else 'no')
+          except Exception:
+              print('yes')
+          PY
+            )
+            if [ "$RUN_LAB" = "yes" ]; then
+              echo "Strategy Lab stale; rebuilding"
+              python scripts/strategy_lab_server.py
+            fi
+
+            python - <<PY
+          import json
+          from datetime import datetime, timezone
+          d={
+            'at': datetime.now(timezone.utc).isoformat(),
+            'event': 'daemon',
+            'trigger': '${{ github.event_name }}',
+            'workflow': 'BTC 24H Research Daemon',
+            'runId': '${{ github.run_id }}',
+            'runNumber': '${{ github.run_number }}',
+            'loop': ${loop},
+            'cadenceMinutes': 15,
+            'sha': '${{ github.sha }}'
+          }
+          with open('data/research/research-heartbeat.json','w',encoding='utf-8') as f:
+              json.dump(d,f,ensure_ascii=False,indent=2)
+          PY
+
+            git add data/research/latest.json data/research/shadow-history.json data/research/regime-state.json data/research/research-heartbeat.json
+            git add data/research/lab-latest.json data/research/lab-history.json 2>/dev/null || true
+            if ! git diff --cached --quiet; then
+              git commit -m "research: daemon 15m state loop ${loop}"
+              for attempt in 1 2 3; do
+                if git pull --rebase origin main && git push origin HEAD:main; then
+                  break
+                fi
+                echo "daemon push retry ${attempt}/3"
+                git rebase --abort 2>/dev/null || true
+                sleep $((attempt * 3))
+              done
+            else
+              echo "No research state changes"
+            fi
+
+            if [ "$loop" -lt 23 ]; then
+              sleep 900
+            fi
+          done
+      - name: Chain next daemon run
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Dispatching successor daemon run"
+          curl --fail-with-body -L -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/research-daemon.yml/dispatches" \
+            -d '{"ref":"main"}'
