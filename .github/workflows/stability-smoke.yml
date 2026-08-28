@@ -37,8 +37,7 @@ jobs:
             node --check "$f"
           done
       - name: Python syntax
-        run: |
-          python -m compileall -q scripts
+        run: python -m compileall -q scripts
       - name: Stability architecture assertions
         run: |
           python - <<'PY'
@@ -49,16 +48,28 @@ jobs:
           boot=Path('version-guard.js').read_text(encoding='utf-8')
           sw=Path('sw.js').read_text(encoding='utf-8')
           stab=Path('stability-guard.js').read_text(encoding='utf-8')
+          safety=Path('safety-core.js').read_text(encoding='utf-8')
           shell=Path('v850-shell.js').read_text(encoding='utf-8')
-          m=re.search(r"version:'(8\.21\.\d+)'",cfg)
-          assert m, 'canonical version must remain on v8.21 patch line'
+          research=Path('research-shadow.js').read_text(encoding='utf-8')
+          recovery=Path('recovery-v2-ui.js').read_text(encoding='utf-8')
+          health=Path('research-health.js').read_text(encoding='utf-8')
+          startup=Path('startup-health.js').read_text(encoding='utf-8')
+          m=re.search(r"version:'(8\.22\.\d+)'",cfg)
+          assert m, 'canonical version must remain on v8.22 patch line'
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
           for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
-          assert 'stability-guard.js' in sw, 'service worker missing stability guard'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
-          assert 'adoptCanonicalHome' in shell and 'v850HomePane' in shell, 'canonical hedge dashboard home missing'
-          assert 'legacyDashboard' not in shell and 'quarantineLegacy' not in shell, 'legacy quarantine must not hide the core home dashboard'
+          assert 'BTC_DECISION_ALLOWED===true' in safety.replace(' ',''), 'central safety must be fail-closed'
+          assert 'BTC_DECISION_ALLOWED===true' in stab.replace(' ',''), 'legacy bridge must be fail-closed'
+          for slot in ['v850ResearchSlot','v850RecoverySlot','v850HealthSlot','v850IntelligenceSlot']:
+              assert slot in shell, f'missing canonical home slot: {slot}'
+          assert 'BTCUIHomeSlots' in shell and 'ensureHomeSlots' in shell, 'home slot registry missing'
+          assert "get?.('research')" in research, 'Research Shadow not bound to research slot'
+          assert "get?.('recovery')" in recovery, 'Recovery V2 not bound to recovery slot'
+          assert "get?.('health')" in health and "get?.('health')" in startup, 'health modules not bound to health slot'
+          assert "searchParams.get('v')" in sw, 'service worker cache version must follow registration version'
+          assert "BTC_APP_CONFIG?.version" in stab and "register('./sw.js?v='" in stab, 'service worker registration must use canonical app version'
           legacy=Path('index.html').read_text(encoding='utf-8')
           if re.search(r'\bchanged\s*=\s*False\b|\bchanged\s*=\s*True\b', legacy):
               print('WARNING: legacy scanner source still contains Python-style booleans; runtime Stability Guard patches this path.')
