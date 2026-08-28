@@ -1,9 +1,9 @@
-/* BTC Hedge Assistant v8.21.2 - Canonical Hedge Dashboard Home */
+/* BTC Hedge Assistant v8.21.3 - Canonical Hedge Dashboard Home */
 (()=>{
 'use strict';
 if(window.__BTC_MODERN_SHELL_SINGLETON&&window.BTCV853)return;
 window.__BTC_MODERN_SHELL_SINGLETON=true;
-const FALLBACK_VERSION='8.21.2';
+const FALLBACK_VERSION='8.21.3';
 const NAV=[['home','홈'],['scanner','스캐너'],['position','포지션'],['daily','일일 시황'],['more','더보기']];
 const MORE=[['strategyLab','🧪 전략 연구소','24H Research · Forward/OOS · Champion 검증'],['trade','실전 매매표','현재 가격구간 행동 로드맵'],['settings','전략 설정','지표·안전거리·거래량 기준'],['alerts','알림','가격·전략 알림 관리'],['backtest','백테스트','전략 성과와 MDD 검증'],['log','실행 기록','판단 실행 및 학습 기록'],['chart','차트','지표 차트와 가격 레벨 확인']];
 const $=id=>document.getElementById(id);
@@ -12,7 +12,7 @@ function version(){return window.BTC_APP_CONFIG?.version||window.BTC_APP_VERSION
 function injectStyle(){
   if($('v853Style'))return;
   const s=document.createElement('style');s.id='v853Style';
-  s.textContent=`body.v853{padding-bottom:92px}body.v853 main>.v853Page{display:none!important}body.v853 main>.v853Page.v853Active{display:block!important}body.v853 main>.topTabsSticky,body.v853 main>.v82TabsHint{display:none!important}#v850HomePane,#v850MorePane,#strategyLab{max-width:980px;margin:0 auto;padding:2px 0 110px}#v850HomePane>.card,#v850HomePane>.grid2,#v850HomePane>.grid3,#v850HomePane>.grid4{margin-bottom:10px}footer.v850Nav{grid-template-columns:repeat(5,1fr)!important;gap:4px!important;padding:7px 8px max(8px,env(safe-area-inset-bottom))!important}footer.v850Nav button{background:transparent;border-color:transparent;border-radius:12px;min-height:50px;padding:5px 1px;font-size:10px;color:#a7b3c0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}footer.v850Nav button::before{font-size:18px;line-height:1}footer.v850Nav button[data-route=home]::before{content:'⌂'}footer.v850Nav button[data-route=scanner]::before{content:'⌕'}footer.v850Nav button[data-route=position]::before{content:'◫'}footer.v850Nav button[data-route=daily]::before{content:'☼'}footer.v850Nav button[data-route=more]::before{content:'•••'}footer.v850Nav button.active{background:#172a46!important;border-color:#315a91!important;color:#eef6ff}.v850Hero{background:linear-gradient(180deg,#14243a,#0e1825);border:1px solid #35517a;border-radius:18px;padding:15px;margin-bottom:10px}.v850Eyebrow{font-size:11px;color:#8fa4bb}.v850Title{font-size:23px;font-weight:900;margin-top:3px}.v850Sub{font-size:12px;color:#9aa6b2;line-height:1.5;margin-top:5px}.v850Menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.v850Menu button{min-height:82px;text-align:left;padding:12px;border-radius:15px;background:#0f1925}.v850Menu b{display:block;font-size:14px;margin-bottom:4px}.v850Menu span{font-size:10px;color:#93a1b0;line-height:1.35}.v850SectionTitle{font-size:15px;font-weight:850;margin:16px 4px 8px}`;
+  s.textContent=`body.v853{padding-bottom:92px}body.v853 main>.v853Page{display:none!important}body.v853 main>.v853Page.v853Active{display:block!important}body.v853 main>.topTabsSticky,body.v853 main>.v82TabsHint{display:none!important}#v850HomePane,#v850MorePane,#strategyLab{max-width:980px;margin:0 auto;padding:2px 0 110px}#v850HomePane>.card,#v850HomePane>.grid2,#v850HomePane>.grid3,#v850HomePane>.grid4{margin-bottom:10px}#v850ResearchSlot{display:block!important;width:100%;min-width:0;margin:0;padding:0}footer.v850Nav{grid-template-columns:repeat(5,1fr)!important;gap:4px!important;padding:7px 8px max(8px,env(safe-area-inset-bottom))!important}footer.v850Nav button{background:transparent;border-color:transparent;border-radius:12px;min-height:50px;padding:5px 1px;font-size:10px;color:#a7b3c0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}footer.v850Nav button::before{font-size:18px;line-height:1}footer.v850Nav button[data-route=home]::before{content:'⌂'}footer.v850Nav button[data-route=scanner]::before{content:'⌕'}footer.v850Nav button[data-route=position]::before{content:'◫'}footer.v850Nav button[data-route=daily]::before{content:'☼'}footer.v850Nav button[data-route=more]::before{content:'•••'}footer.v850Nav button.active{background:#172a46!important;border-color:#315a91!important;color:#eef6ff}.v850Hero{background:linear-gradient(180deg,#14243a,#0e1825);border:1px solid #35517a;border-radius:18px;padding:15px;margin-bottom:10px}.v850Eyebrow{font-size:11px;color:#8fa4bb}.v850Title{font-size:23px;font-weight:900;margin-top:3px}.v850Sub{font-size:12px;color:#9aa6b2;line-height:1.5;margin-top:5px}.v850Menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.v850Menu button{min-height:82px;text-align:left;padding:12px;border-radius:15px;background:#0f1925}.v850Menu b{display:block;font-size:14px;margin-bottom:4px}.v850Menu span{font-size:10px;color:#93a1b0;line-height:1.35}.v850SectionTitle{font-size:15px;font-weight:850;margin:16px 4px 8px}`;
   document.head.appendChild(s);
 }
 function isToolPane(el){return !!(el&&el.id&&TOOL_IDS.has(el.id))}
@@ -38,10 +38,22 @@ function moveHomeNode(el){
     home.appendChild(el);
   }
 }
+function ensureResearchSlot(){
+  const home=$('v850HomePane');if(!home)return null;
+  let slot=$('v850ResearchSlot');
+  if(!slot){slot=document.createElement('section');slot.id='v850ResearchSlot';slot.dataset.role='research-home-slot'}
+  if(slot.parentElement!==home){
+    const anchor=$('nextNow')?.closest('.nextActionCard')||$('v853DecisionSummary')?.closest('.card');
+    if(anchor&&anchor.parentElement===home)anchor.insertAdjacentElement('afterend',slot);else home.appendChild(slot);
+  }
+  slot.classList.remove('v853Page','v852Page','v851Page','tabPane','activePane');slot.style.display='block';
+  return slot;
+}
 function adoptCanonicalHome(){
   const main=document.querySelector('main');if(!main||!$('v850HomePane'))return;
   normalizeStrategyLab();
   [...main.children].forEach(moveHomeNode);
+  ensureResearchSlot();
 }
 function markToolPages(){
   normalizeStrategyLab();
@@ -53,6 +65,7 @@ function activatePane(el,r){
   if(!el)return false;markToolPages();
   document.querySelectorAll('main>.v853Page,#v850HomePane,#v850MorePane').forEach(x=>{x.classList.remove('v853Active','activePane');x.style.display='none'});
   el.classList.add('v853Active');if(el.classList.contains('tabPane'))el.classList.add('activePane');el.style.display='block';navActive(r);
+  if(el.id==='v850HomePane')ensureResearchSlot();
   requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));return true;
 }
 function showHome(){ensurePages();adoptCanonicalHome();return activatePane($('v850HomePane'),'home')}
@@ -74,16 +87,16 @@ function buildFooter(){let f=document.querySelector('footer');if(!f){f=document.
 function patchVersion(){const v=version();document.title=`BTC Hedge Assistant v${v}`;document.querySelectorAll('h1').forEach(h=>{if(/BTC Hedge Assistant/i.test(h.textContent||''))h.textContent=`BTC Hedge Assistant v${v}`});window.BTC_APP_VERSION=v}
 function watchNewHomeCards(){
   const main=document.querySelector('main');if(!main||window.__BTC_HOME_OBSERVER)return;
-  window.__BTC_HOME_OBSERVER=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.id==='strategyLab'){normalizeStrategyLab();continue}if(!isToolPane(n))moveHomeNode(n)}});
+  window.__BTC_HOME_OBSERVER=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.id==='strategyLab'){normalizeStrategyLab();continue}if(!isToolPane(n))moveHomeNode(n)}ensureResearchSlot()});
   window.__BTC_HOME_OBSERVER.observe(main,{childList:true});
 }
 function init(){
   injectStyle();document.body.classList.remove('v851','v852');document.body.classList.add('v853');patchVersion();
   if(!ensurePages())return;normalizeStrategyLab();markToolPages();adoptCanonicalHome();buildFooter();watchNewHomeCards();
   const h=(location.hash||'#home').slice(1);route(NAV.some(x=>x[0]===h)?h:'home');
-  setTimeout(()=>{patchVersion();normalizeStrategyLab();adoptCanonicalHome();try{window.BTCResearchShadow?.heal?.();window.BTCResearchHealth?.render?.();window.BTCRecoveryV2UI?.render?.()}catch(e){}},1200);
+  setTimeout(()=>{patchVersion();normalizeStrategyLab();adoptCanonicalHome();ensureResearchSlot();try{window.BTCResearchShadow?.heal?.();window.BTCResearchHealth?.render?.();window.BTCRecoveryV2UI?.render?.()}catch(e){}},1200);
 }
 window.addEventListener('hashchange',()=>{const h=(location.hash||'#home').slice(1);if(NAV.some(x=>x[0]===h))route(h)});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});else setTimeout(init,120);
-window.BTCV853={version:FALLBACK_VERSION,route,activatePane,showHome,showDaily,showMore,openTool,adoptModernHome:adoptCanonicalHome,adoptCanonicalHome,normalizeStrategyLab};
+window.BTCV853={version:FALLBACK_VERSION,route,activatePane,showHome,showDaily,showMore,openTool,adoptModernHome:adoptCanonicalHome,adoptCanonicalHome,normalizeStrategyLab,ensureResearchSlot};
 })();
