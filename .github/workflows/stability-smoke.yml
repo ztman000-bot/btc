@@ -64,7 +64,7 @@ jobs:
           assert 'BTC_DECISION_ALLOWED===true' in stab.replace(' ',''), 'legacy bridge must be fail-closed'
           assert "['home','⌂','홈']" in shell and "['research','⌬','연구소']" in shell, 'canonical bottom routes missing'
           assert 'v8222ResearchShadowSlot' in research, 'Research Shadow must be isolated to research route'
-          assert 'v8222ResearchRecoverySlot' in recovery, 'Recovery V2 must be isolated to research route'
+          assert 'v8222RecoverySlot' in recovery, 'Recovery V2 must be isolated to research route'
           assert 'v8222ResearchHealthSlot' in health, 'Research Health must be isolated to research route'
           for card in ['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard']:
               assert card in patch, f'missing restored strategy engine: {card}'
