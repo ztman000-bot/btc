@@ -57,7 +57,8 @@ jobs:
               assert name in boot, f'missing canonical bootstrap module: {name}'
           assert 'stability-guard.js' in sw, 'service worker missing stability guard'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
-          assert 'LEGACY_STATIC_NODES' in shell and 'quarantineLegacy' in shell and 'legacyDashboard' in shell, 'legacy home quarantine missing'
+          assert 'adoptCanonicalHome' in shell and 'v850HomePane' in shell, 'canonical hedge dashboard home missing'
+          assert 'legacyDashboard' not in shell and 'quarantineLegacy' not in shell, 'legacy quarantine must not hide the core home dashboard'
           legacy=Path('index.html').read_text(encoding='utf-8')
           if re.search(r'\bchanged\s*=\s*False\b|\bchanged\s*=\s*True\b', legacy):
               print('WARNING: legacy scanner source still contains Python-style booleans; runtime Stability Guard patches this path.')
