@@ -1,8 +1,8 @@
-/* BTC Hedge Assistant v8.21.3 - 24H Research & Shadow dashboard */
+/* BTC Hedge Assistant v8.22.0 - 24H Research & Shadow dashboard */
 (()=>{'use strict';
 if(window.__BTC_RESEARCH_SHADOW_SINGLETON&&window.BTCResearchShadow)return;window.__BTC_RESEARCH_SHADOW_SINGLETON=true;
 const V='2.1',$=id=>document.getElementById(id);let LAST=null,ERR='';
-function host(){return $('v850ResearchSlot')||window.BTCV853?.ensureResearchSlot?.()||$('v850HomePane')||document.querySelector('main>.v853Active')||document.querySelector('main')}
+function host(){return window.BTCUIHomeSlots?.get?.('research')||window.BTCV853?.slot?.('research')||$('v850ResearchSlot')||$('v850HomePane')||document.querySelector('main')}
 function ensure(){let c=$('researchShadowCard');if(!c){c=document.createElement('div');c.id='researchShadowCard';c.className='card';c.dataset.role='research-shadow-dashboard'}const p=host();if(!p)return c;if(c.parentElement!==p)p.appendChild(c);c.classList.remove('v853Page','v852Page','v851Page','tabPane','activePane');c.style.setProperty('display','block','important');c.style.setProperty('visibility','visible','important');c.style.setProperty('opacity','1','important');c.style.setProperty('width','100%','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('min-width','0','important');c.style.setProperty('margin','0 0 10px 0','important');return c}
 const money=x=>Number.isFinite(Number(x))?'$'+Math.round(Number(x)).toLocaleString():'--',pct=x=>Number.isFinite(Number(x))?(Number(x)*100).toFixed(1)+'%':'--';
 function age(ts){if(!ts)return'첫 실행 대기';const m=(Date.now()-new Date(ts).getTime())/60000;if(m<2)return'방금 갱신';if(m<120)return Math.round(m)+'분 전';return(m/60).toFixed(1)+'시간 전'}
