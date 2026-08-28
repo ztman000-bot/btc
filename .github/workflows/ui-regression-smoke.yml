@@ -27,6 +27,16 @@ jobs:
           node-version: '22'
       - name: Install lightweight browser driver
         run: npm install --no-save playwright-core@1.55.0
+      - name: Static JavaScript syntax checks
+        run: |
+          node --check v850-shell.js
+          node --check app-config.js
+          node --check version-guard.js
+          node --check sw.js
+          if grep -RInE '\b(changed|ok|ready|enabled)=(True|False)\b' --include='*.js' .; then
+            echo 'Python-style booleans found in JavaScript'
+            exit 1
+          fi
       - name: Start local app
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/btc-http.log 2>&1 &
@@ -51,35 +61,41 @@ jobs:
             const errors=[];
             page.on('pageerror',e=>errors.push(String(e)));
             await page.goto(process.env.BTC_TEST_URL,{waitUntil:'domcontentloaded',timeout:30000});
-            await page.waitForTimeout(2500);
+            await page.waitForTimeout(3500);
             async function visible(sel,label){
               const loc=page.locator(sel).first();
               if(await loc.count()===0) throw new Error(label+' missing: '+sel);
               if(!(await loc.isVisible())) throw new Error(label+' hidden: '+sel);
             }
-            await visible('#v850HomePane','home pane');
-            await visible('.nextActionCard','next action');
-            await visible('#v850ResearchSlot','research slot');
-            await page.waitForTimeout(12500);
-            await visible('#v850HomePane','home pane after 15s');
-            await visible('.nextActionCard','next action after 15s');
-            await visible('#researchShadowCard','24H Research & Shadow after 15s');
-            const parent=await page.locator('#researchShadowCard').evaluate(el=>el.parentElement?.id||'');
-            if(parent!=='v850ResearchSlot') throw new Error('Research Shadow escaped canonical slot: '+parent);
-            await page.locator('footer.v850Nav button[data-route="more"]').click();
-            await page.waitForTimeout(300);
-            await visible('#v850MorePane','more pane');
-            const labBtn=page.locator('#v850MorePane [data-open="strategyLab"]');
-            if(await labBtn.count()===0) throw new Error('Strategy Lab menu missing');
-            await labBtn.click();
-            await page.waitForTimeout(500);
-            await visible('#strategyLab','strategy lab route');
-            await page.locator('footer.v850Nav button[data-route="home"]').click();
-            await page.waitForTimeout(500);
-            await visible('#v850HomePane','home after lab');
-            await visible('#researchShadowCard','research after home return');
-            const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS/i.test(x));
-            if(fatal.length) console.log('Non-network page errors observed:',fatal.slice(0,10));
+            await visible('#v8221HomePane','compact home');
+            await visible('#v8221HomePane .nextActionCard','home next action');
+            await visible('footer.v8221Dock','bottom dock');
+            const dockCount=await page.locator('footer.v8221Dock button[data-route]').count();
+            if(dockCount!==12) throw new Error('Expected 12 bottom routes, got '+dockCount);
+            const routes=['scanner','position','trade','chart','risk','settings','alerts','backtest','log'];
+            const expected={scanner:'#scanner',position:'#position',trade:'#trade',chart:'#v8221ChartPage',risk:'#v8221RiskPage',settings:'#settings',alerts:'#alerts',backtest:'#backtest',log:'#log'};
+            for(const route of routes){
+              await page.locator(`footer.v8221Dock button[data-route="${route}"]`).click();
+              await page.waitForTimeout(180);
+              await visible(expected[route],route+' route');
+            }
+            await page.locator('footer.v8221Dock button[data-route="research"]').click();
+            await page.waitForTimeout(2500);
+            const labVisible=await page.locator('#strategyLab').first().isVisible().catch(()=>false);
+            const fallbackVisible=await page.locator('#v8221FallbackPage').first().isVisible().catch(()=>false);
+            if(!labVisible&&!fallbackVisible) throw new Error('research route produced no visible content');
+            await page.locator('footer.v8221Dock button[data-route="daily"]').click();
+            await page.waitForTimeout(1500);
+            const dailyVisible=await page.locator('#dailyBriefPane').first().isVisible().catch(()=>false);
+            const dailyFallback=await page.locator('#v8221FallbackPage').first().isVisible().catch(()=>false);
+            if(!dailyVisible&&!dailyFallback) throw new Error('daily route produced no visible content');
+            await page.locator('footer.v8221Dock button[data-route="home"]').click();
+            await page.waitForTimeout(250);
+            await visible('#v8221HomePane','home return');
+            const title=await page.title();
+            if(!title.includes('8.22.1')) throw new Error('version title mismatch: '+title);
+            const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket/i.test(x));
+            if(fatal.length) throw new Error('Non-network page errors: '+fatal.slice(0,8).join(' | '));
             await browser.close();
             console.log('UI regression smoke passed');
           })().catch(e=>{console.error(e);process.exit(1)});
