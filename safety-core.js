@@ -1,7 +1,7 @@
-/* BTC Hedge Assistant v8.21.0 - Central Safety / Guard Core */
+/* BTC Hedge Assistant v8.22.0 - Central Safety / Guard Core */
 (function(){'use strict';
 if(window.__BTC_SAFETY_CORE_SINGLETON&&window.BTCSafetyCore)return;window.__BTC_SAFETY_CORE_SINGLETON=true;
-const V='2.1',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
+const V='2.2',HARD=10000;let SERVER=null,RESEARCH_CFG=null,LAST_FETCH=0,FETCH_ERR='';
 const N=v=>Number.isFinite(Number(v))?Number(v):null;
 function P(){try{return typeof pos==='function'?pos():(window.pos?.())}catch(e){return null}}
 function M(){try{return typeof market!=='undefined'?market:(window.market||{})}catch(e){return window.market||{}}}
@@ -18,8 +18,8 @@ function serverGuard(){const g=Number(SERVER?.guard2?.dynamicOperatingGuardUsd);
 function near(a,b,tol){a=N(a);b=N(b);return a!=null&&b!=null&&Math.abs(a-b)<=tol}
 function researchPosition(){const d=P(),r=RESEARCH_CFG?.position;if(!d||!r)return{known:false,matched:false,reason:'position snapshot unavailable'};const checks={longQty:near(d.lq,r.longQty,.0005),shortQty:near(d.sq,r.shortQty,.0005),longEntry:near(d.le,r.longEntry,5),shortEntry:near(d.se,r.shortEntry,5),referenceLiquidation:near(d.liq,r.referenceLiquidation,50)};const matched=Object.values(checks).every(Boolean);return{known:true,matched,checks,local:{longQty:N(d.lq),shortQty:N(d.sq),longEntry:N(d.le),shortEntry:N(d.se),referenceLiquidation:N(d.liq)},server:{longQty:N(r.longQty),shortQty:N(r.shortQty),longEntry:N(r.longEntry),shortEntry:N(r.shortEntry),referenceLiquidation:N(r.referenceLiquidation)},reason:matched?'server research position matches local position':'server MC position snapshot differs from current app position'}}
 function current(){const sg=serverGuard(),ag=adaptiveGuard(),rp=researchPosition(),fresh=serverFresh(),operating=Math.max(HARD,sg||0,ag||0);return{version:V,hard:HARD,operating,server:sg,adaptive:ag,serverFresh:fresh,researchPositionMatched:rp.matched,researchPositionKnown:rp.known,researchPosition:rp,serverResearchUsable:fresh&&rp.matched,source:sg&&ag?'SERVER+ADAPTIVE':sg?'SERVER':ag?'ADAPTIVE':'HARD_ONLY',at:Date.now()}}
-function healthAllowed(){return window.BTC_DECISION_ALLOWED!==false&&!window.BTC_BOOTSTRAP_ERROR}
-function validate(d,p=price(),s){const g=current(),dist=distance(d,p,s);return{allowed:healthAllowed()&&Number.isFinite(dist)&&dist>=g.operating,healthAllowed:healthAllowed(),distance:dist,guard:g.operating,hard:g.hard,source:g.source,researchPositionMatched:g.researchPositionMatched,serverResearchUsable:g.serverResearchUsable}}
+function healthAllowed(){return window.BTC_DECISION_ALLOWED===true&&!window.BTC_BOOTSTRAP_ERROR}
+function validate(d,p=price(),s){const g=current(),dist=distance(d,p,s),health=healthAllowed();return{allowed:health&&Number.isFinite(dist)&&dist>=g.operating,healthAllowed:health,distance:dist,guard:g.operating,hard:g.hard,source:g.source,researchPositionMatched:g.researchPositionMatched,serverResearchUsable:g.serverResearchUsable}}
 async function getJson(u){const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 function stamp(x){return Date.parse(x?.generatedAt||x?.enhancedAt||x?.at||'')||0}
 async function fetchFreshest(urls){const ok=[],es=[];await Promise.all(urls.map(async u=>{try{ok.push(await getJson(u))}catch(e){es.push(String(e?.message||e))}}));if(!ok.length)throw new Error(es.join(' / '));ok.sort((a,b)=>stamp(b)-stamp(a));return ok[0]}
