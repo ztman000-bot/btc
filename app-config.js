@@ -2,8 +2,8 @@
 (function(){'use strict';
   var CONFIG=Object.freeze({
     name:'BTC Hedge Assistant',
-    version:'8.22.4',
-    architecture:'Compact Summary Home + Canonical 13-Tool Bottom Dock + Persistent Current Price + Restored 7 Strategy Engines + Today Comprehensive Analysis + Runtime Safety Health Monitor + Single Canonical Bootstrap + Full Fail-Closed Safety + 24H Research Daemon + Confirmed-Bar Evidence + Regime Champion 2.1 + Unified Research Health + Symmetric Hedge Rotation + Reversal Intelligence + Scanner Multi-Source Recovery + Good Position TOP10',
+    version:'8.22.5',
+    architecture:'Compact Summary Home + Canonical 13-Tool Bottom Dock + Persistent Current Price + Restored 7 Strategy Engines + Today Comprehensive Analysis + Runtime Safety Health Monitor + Single Canonical Bootstrap + Full Fail-Closed Safety + 24H Research Daemon + Confirmed-Bar Evidence + Regime Champion 2.1 + Unified Research Health + Symmetric Hedge Rotation + Reversal Intelligence + Scanner Multi-Source Recovery + Good Position TOP10 + Scanner Interaction Recovery',
     safety:{hardGuardUsd:10000,failSafeOnCriticalModuleLoss:true,confirmedBarEvidence:true,researchFreshMinutes:45,researchStoppedMinutes:120,labFreshMinutes:300,labStoppedMinutes:600,daemonHeartbeatMinutes:35,runtimeErrorWarnCount24h:5,healthCheckMinutes:5,serviceWorkerVersionGuard:true},
     ui:{homeMode:'compact-summary',bottomDockRoutes:['home','scanner','position','trade','chart','risk','research','analysis','daily','settings','alerts','backtest','log'],slotRegistryVersion:'2.2',persistentPrice:true,researchEngineCount:7,scannerTop10:true},
     modules:{
@@ -12,7 +12,7 @@
       safety:'Central Safety / Guard Core 2.2 Fail-Closed',
       safetyHealth:'Runtime Safety Health Monitor 1.0',
       shell:'Compact Summary Home + Canonical 13-Tool Bottom Dock',
-      uiPatch:'v8.22.4 Scanner Recovery + TOP10 Restore',
+      uiPatch:'v8.22.5 Scanner Interaction + TOP10 Visibility Fix',
       todayAnalysis:'Today Comprehensive Analysis 1.0',
       recovery:'Recovery Engine 2.0',
       shadow:'Shadow 2.2 Confirmed-Bar Forward',
@@ -24,7 +24,7 @@
       strategyLab:'Dedicated Strategy Research Lab V2 + 7 Live Strategy Engines',
       rotation:'Symmetric Profit Transfer / Hedge Rotation',
       reversal:'Reversal Intelligence Engine',
-      scannerRecovery:'Binance Futures -> Bybit failover',
+      scannerRecovery:'Binance Futures -> Bybit failover + interaction guard',
       top10:'60-Asset Good Position TOP10 Radar'
     }
   });
@@ -42,8 +42,8 @@
     });
   }
   setTimeout(function(){
-    loadOnce('btcScannerHotfix8224','./scanner-hotfix-v8224.js?v='+CONFIG.version)
+    loadOnce('btcScannerHotfix8225','./scanner-hotfix-v8225.js?v='+CONFIG.version)
       .then(function(){return loadOnce('btcAutoTop10Restore','./auto-top10.js?v='+CONFIG.version)})
-      .catch(function(e){console.warn('[BTC v8.22.4 optional recovery]',e)});
+      .catch(function(e){console.warn('[BTC v8.22.5 optional recovery]',e)});
   },0);
 })();
