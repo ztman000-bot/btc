@@ -33,6 +33,8 @@ jobs:
           node --check app-config.js
           node --check version-guard.js
           node --check sw.js
+          node --check safety-health.js
+          node --check today-analysis.js
           if grep -RInE '\b(changed|ok|ready|enabled)=(True|False)\b' --include='*.js' .; then
             echo 'Python-style booleans found in JavaScript'
             exit 1
@@ -61,40 +63,50 @@ jobs:
             const errors=[];
             page.on('pageerror',e=>errors.push(String(e)));
             await page.goto(process.env.BTC_TEST_URL,{waitUntil:'domcontentloaded',timeout:30000});
-            await page.waitForTimeout(3500);
+            await page.waitForTimeout(4500);
             async function visible(sel,label){
               const loc=page.locator(sel).first();
               if(await loc.count()===0) throw new Error(label+' missing: '+sel);
               if(!(await loc.isVisible())) throw new Error(label+' hidden: '+sel);
             }
-            await visible('#v8221HomePane','compact home');
-            await visible('#v8221HomePane .nextActionCard','home next action');
-            await visible('footer.v8221Dock','bottom dock');
-            const dockCount=await page.locator('footer.v8221Dock button[data-route]').count();
-            if(dockCount!==12) throw new Error('Expected 12 bottom routes, got '+dockCount);
+            await visible('#v8222HomePane','compact home');
+            await visible('#v8222HomePane .nextActionCard','home next action');
+            await visible('footer.v8222Dock','bottom dock');
+            await visible('#v8222HealthBadge','health badge');
+            const dockCount=await page.locator('footer.v8222Dock button[data-route]').count();
+            if(dockCount!==13) throw new Error('Expected 13 bottom routes, got '+dockCount);
             const routes=['scanner','position','trade','chart','risk','settings','alerts','backtest','log'];
-            const expected={scanner:'#scanner',position:'#position',trade:'#trade',chart:'#v8221ChartPage',risk:'#v8221RiskPage',settings:'#settings',alerts:'#alerts',backtest:'#backtest',log:'#log'};
+            const expected={scanner:'#scanner',position:'#position',trade:'#trade',chart:'#v8222ChartPage',risk:'#v8222RiskPage',settings:'#settings',alerts:'#alerts',backtest:'#backtest',log:'#log'};
             for(const route of routes){
-              await page.locator(`footer.v8221Dock button[data-route="${route}"]`).click();
+              await page.locator(`footer.v8222Dock button[data-route="${route}"]`).click();
               await page.waitForTimeout(180);
               await visible(expected[route],route+' route');
             }
-            await page.locator('footer.v8221Dock button[data-route="research"]').click();
+            await page.locator('footer.v8222Dock button[data-route="analysis"]').click();
+            await page.waitForTimeout(1500);
+            await visible('#v8222TodayAnalysisPage','today comprehensive analysis');
+            const analysisText=await page.locator('#v8222TodayAnalysisPage').innerText();
+            if(!analysisText.includes('금일의 종합분석')||!analysisText.includes('오늘의 결론')) throw new Error('Analysis narrative incomplete');
+            await page.locator('footer.v8222Dock button[data-route="research"]').click();
             await page.waitForTimeout(2500);
             const labVisible=await page.locator('#strategyLab').first().isVisible().catch(()=>false);
-            const fallbackVisible=await page.locator('#v8221FallbackPage').first().isVisible().catch(()=>false);
+            const fallbackVisible=await page.locator('#v8222FallbackPage').first().isVisible().catch(()=>false);
             if(!labVisible&&!fallbackVisible) throw new Error('research route produced no visible content');
-            await page.locator('footer.v8221Dock button[data-route="daily"]').click();
+            await page.locator('footer.v8222Dock button[data-route="daily"]').click();
             await page.waitForTimeout(1500);
             const dailyVisible=await page.locator('#dailyBriefPane').first().isVisible().catch(()=>false);
-            const dailyFallback=await page.locator('#v8221FallbackPage').first().isVisible().catch(()=>false);
+            const dailyFallback=await page.locator('#v8222FallbackPage').first().isVisible().catch(()=>false);
             if(!dailyVisible&&!dailyFallback) throw new Error('daily route produced no visible content');
-            await page.locator('footer.v8221Dock button[data-route="home"]').click();
+            await page.locator('footer.v8222Dock button[data-route="home"]').click();
             await page.waitForTimeout(250);
-            await visible('#v8221HomePane','home return');
+            await visible('#v8222HomePane','home return');
             const title=await page.title();
-            if(!title.includes('8.22.1')) throw new Error('version title mismatch: '+title);
-            const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket/i.test(x));
+            if(!title.includes('8.22.2')) throw new Error('version title mismatch: '+title);
+            const cfgVersion=await page.evaluate(()=>window.BTC_APP_CONFIG?.version||'');
+            if(cfgVersion!=='8.22.2') throw new Error('config version mismatch: '+cfgVersion);
+            const safetyApi=await page.evaluate(()=>!!window.BTCSafetyHealth&&typeof window.BTCSafetyHealth.check==='function');
+            if(!safetyApi) throw new Error('Safety health API missing');
+            const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));
             if(fatal.length) throw new Error('Non-network page errors: '+fatal.slice(0,8).join(' | '));
             await browser.close();
             console.log('UI regression smoke passed');
