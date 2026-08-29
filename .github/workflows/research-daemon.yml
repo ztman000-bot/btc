@@ -44,6 +44,7 @@ jobs:
 
             python scripts/research_shadow.py
             python scripts/research_v2_enhance.py
+            python scripts/ai_data_pipeline.py
 
             RUN_LAB=$(python - <<'PY'
           import json
@@ -83,6 +84,7 @@ jobs:
 
             git add data/research/latest.json data/research/shadow-history.json data/research/regime-state.json data/research/research-heartbeat.json
             git add data/research/lab-latest.json data/research/lab-history.json 2>/dev/null || true
+            git add data/research/ai-dataset.json data/research/ai-dataset-latest.json data/research/paper-validation.json 2>/dev/null || true
             if ! git diff --cached --quiet; then
               git commit -m "research: daemon 15m state loop ${loop}"
               for attempt in 1 2 3; do
