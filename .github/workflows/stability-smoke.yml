@@ -55,12 +55,15 @@ jobs:
           research=Path('research-shadow.js').read_text(encoding='utf-8')
           recovery=Path('recovery-v2-ui.js').read_text(encoding='utf-8')
           health=Path('research-health.js').read_text(encoding='utf-8')
-          m=re.search(r"version:'(8\.22\.\d+)'",cfg)
-          assert m, 'canonical 8.22.x version missing from app-config'
+          perf=Path('performance-core.js').read_text(encoding='utf-8')
+          m=re.search(r"version:'(8\.23\.\d+)'",cfg)
+          assert m, 'canonical 8.23.x version missing from app-config'
           version=m.group(1)
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
-          for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js']:
+          for name in ['performance-core.js','safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
+          assert 'preloadMany' in boot and 'yieldMain' in boot, 'performance-aware bootstrap missing'
+          assert 'PerformanceObserver' in perf and 'yieldToMain' in perf, 'performance core missing telemetry/scheduler'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
           assert 'BTC_DECISION_ALLOWED===true' in safety.replace(' ',''), 'central safety must be fail-closed'
           assert 'BTC_DECISION_ALLOWED===true' in stab.replace(' ',''), 'legacy bridge must be fail-closed'
@@ -72,7 +75,7 @@ jobs:
               assert card in patch, f'missing restored strategy engine: {card}'
           assert 'v8223PriceStrip' in patch and 'setInterval(updatePrice,2000)' in patch, 'persistent price strip missing'
           assert f"const APP_VERSION='{version}'" in sw, 'service worker cache version must match canonical config'
-          for asset in ['v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','stability-cleanup.js']:
+          for asset in ['performance-core.js','v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','stability-cleanup.js']:
               assert asset in sw, f'service worker missing managed asset: {asset}'
           assert "BTC_APP_CONFIG?.version" in stab and "register('./sw.js?v='" in stab, 'service worker registration must use canonical app version'
           assert 'BTC_APP_CONFIG?.version' in cleanup and "register('./sw.js?v='" in cleanup, 'cleanup guard must follow canonical app version'
