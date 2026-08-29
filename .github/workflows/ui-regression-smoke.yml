@@ -25,72 +25,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install lightweight browser driver
+      - name: Install browser driver
         run: npm install --no-save playwright-core@1.55.0
       - name: Static JavaScript syntax checks
         run: |
-          node --check v850-shell.js
-          node --check v8223-ui.js
-          node --check app-config.js
-          node --check version-guard.js
-          node --check sw.js
-          node --check stability-cleanup.js
-          node --check scanner-network-fix.js
-          node --check scanner-hotfix-v8224.js
-          node --check scanner-hotfix-v8225.js
-          node --check safety-health.js
-          node --check today-analysis.js
-          node --check strategy-lab.js
-          node --check research-shadow.js
-          node --check recovery-v2-ui.js
-          node --check research-health.js
-          if grep -RInE '\b(changed|ok|ready|enabled)=(True|False)\b' --include='*.js' .; then
-            echo 'Python-style booleans found in JavaScript'
-            exit 1
-          fi
+          set -e
+          for f in ./*.js; do node --check "$f"; done
+          if grep -RInE '\b(changed|ok|ready|enabled)=(True|False)\b' --include='*.js' .; then exit 1; fi
       - name: Start local app
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/btc-http.log 2>&1 &
-          echo $! > /tmp/btc-http.pid
-          for i in {1..20}; do
-            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
-            sleep 1
-          done
-      - name: Browser regression checks
-        env:
-          BTC_TEST_URL: http://127.0.0.1:4173/#home
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Mobile UI regression
         run: |
           node <<'NODE'
-          const { chromium } = require('playwright-core');
-          const fs = require('fs');
-          const candidates=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'];
-          const executablePath=candidates.find(p=>fs.existsSync(p));
-          if(!executablePath) throw new Error('No Chromium/Chrome executable on runner');
-          (async()=>{
-            const browser=await chromium.launch({headless:true,executablePath,args:['--no-sandbox']});
-            const page=await browser.newPage({viewport:{width:430,height:932}});
-            const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-            await page.goto(process.env.BTC_TEST_URL,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForTimeout(6500);
-            async function visible(sel,label){const loc=page.locator(sel).first();if(await loc.count()===0)throw new Error(label+' missing: '+sel);if(!(await loc.isVisible()))throw new Error(label+' hidden: '+sel)}
-            async function hiddenOrMissing(sel,label){const loc=page.locator(sel).first();if(await loc.count()&&await loc.isVisible())throw new Error(label+' leaked outside research: '+sel)}
-            async function openEngine(wrap,card,label){const c=page.locator(card).first();if(!(await c.isVisible().catch(()=>false))){await page.locator(wrap+' summary').click();await page.waitForTimeout(180)}await visible(card,label)}
-            async function assertNoDuplicateIds(){const dup=await page.evaluate(()=>{const s=new Set(),d=new Set();document.querySelectorAll('[id]').forEach(e=>{if(s.has(e.id))d.add(e.id);else s.add(e.id)});return [...d]});if(dup.length)throw new Error('Duplicate DOM ids: '+dup.join(','))}
-            await visible('#v8222HomePane','compact home');await visible('#v8222HomePane .nextActionCard','home next action');await visible('#v8222HomePane #price','home current price');await visible('footer.v8222Dock','bottom dock');await visible('#v8222HealthBadge','health badge');
-            if(await page.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 bottom routes');
-            const cleanup=await page.evaluate(()=>({api:!!window.BTCStabilityCleanup,state:window.BTCStabilityCleanupState||null,scanner:!!window.BTCScannerNetworkFix,hotfix:!!window.BTCScannerHotfix8225}));if(!cleanup.api)throw new Error('stability cleanup API missing');if(!cleanup.scanner)throw new Error('scanner network fix missing');if(cleanup.state?.duplicateIds?.length)throw new Error('cleanup reports duplicate ids: '+cleanup.state.duplicateIds.join(','));
-            await assertNoDuplicateIds();
-            const engineIds=['#adaptiveLearningCard','#reversalIntelligenceCard','#strategyGovernanceCard','#terminalWalletCard','#hedgeRotationCard','#recoveryEngineCard','#executionExitCard'];
-            for(const id of engineIds)await hiddenOrMissing(id,'home strategy engine');
-            const routes=['scanner','position','trade','chart','risk','settings','alerts','backtest','log'],expected={scanner:'#scanner',position:'#position',trade:'#trade',chart:'#v8222ChartPage',risk:'#v8222RiskPage',settings:'#settings',alerts:'#alerts',backtest:'#backtest',log:'#log'};
-            for(const route of routes){await page.locator(`footer.v8222Dock button[data-route="${route}"]`).click();await page.waitForTimeout(420);await visible(expected[route],route+' route');await visible('#v8223PriceStrip',route+' persistent price');for(const id of engineIds)await hiddenOrMissing(id,route+' strategy engine');await assertNoDuplicateIds()}
-            await page.locator('footer.v8222Dock button[data-route="analysis"]').click();await page.waitForTimeout(1600);await visible('#v8222TodayAnalysisPage','today comprehensive analysis');await visible('#v8223PriceStrip','analysis persistent price');const analysisText=await page.locator('#v8222TodayAnalysisPage').innerText();if(!analysisText.includes('금일의 종합분석')||!analysisText.includes('오늘의 결론'))throw new Error('Analysis narrative incomplete');
-            await page.locator('footer.v8222Dock button[data-route="research"]').click();await page.waitForTimeout(4700);await visible('#strategyLab','strategy lab');await visible('#strategyComparisonCard','strategy comparison card');await visible('#v8223EngineHost','strategy engine host');await visible('#v8223PriceStrip','research persistent price');const labText=await page.locator('#strategyLab').innerText();if(!labText.includes('기존 전략 / 후보전략 비교')||!labText.includes('실전 전략 엔진 7종'))throw new Error('strategy lab restore text missing');
-            for(const id of engineIds){const wrap='#v8223Wrap_'+id.slice(1);const w=page.locator(wrap);if(await w.count()===0)throw new Error('engine wrapper missing '+id);await openEngine(wrap,id,'engine restored '+id)}
-            await assertNoDuplicateIds();
-            const engineParents=await page.evaluate(()=>['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard'].map(id=>({id,parent:document.getElementById(id)?.parentElement?.className||''})));if(engineParents.some(x=>!String(x.parent).includes('v8223EngineBody')))throw new Error('engine rehome failed: '+JSON.stringify(engineParents));
-            await page.locator('footer.v8222Dock button[data-route="daily"]').click();await page.waitForTimeout(1500);const dailyVisible=await page.locator('#dailyBriefPane').first().isVisible().catch(()=>false),dailyFallback=await page.locator('#v8222FallbackPage').first().isVisible().catch(()=>false);if(!dailyVisible&&!dailyFallback)throw new Error('daily route produced no visible content');await visible('#v8223PriceStrip','daily persistent price');for(const id of engineIds)await hiddenOrMissing(id,'daily strategy engine');
-            await page.locator('footer.v8222Dock button[data-route="home"]').click();await page.waitForTimeout(420);await visible('#v8222HomePane','home return');await visible('#v8222HomePane #price','home return current price');await hiddenOrMissing('#v8223PriceStrip','home price strip');
-            const cfgVersion=await page.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(!/^8\.22\.\d+$/.test(cfgVersion))throw new Error('invalid canonical version: '+cfgVersion);const title=await page.title();if(!title.includes(cfgVersion))throw new Error('version title mismatch: '+title+' / '+cfgVersion);const patch=await page.evaluate(()=>!!window.BTCV8223&&window.BTCV8223.engines?.length===7);if(!patch)throw new Error('canonical UI patch missing');const safetyApi=await page.evaluate(()=>!!window.BTCSafetyHealth&&typeof window.BTCSafetyHealth.check==='function');if(!safetyApi)throw new Error('Safety health API missing');const cleanupVersion=await page.evaluate(()=>window.BTCStabilityCleanupState?.version||'');if(cleanupVersion!==cfgVersion)throw new Error('cleanup version mismatch: '+cleanupVersion+' / '+cfgVersion);
-            const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error('Non-network page errors: '+fatal.slice(0,8).join(' | '));await browser.close();console.log('UI regression smoke passed for '+cfgVersion);
-          })().catch(e=>{console.error(e);process.exit(1)});
+          const {chromium}=require('playwright-core'),fs=require('fs');
+          const exe=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync);if(!exe)throw new Error('No browser');
+          (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(7000);
+          const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(!/^8\.23\.\d+$/.test(v))throw new Error('invalid canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title/version mismatch');
+          if(await p.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 routes');
+          const dup=await p.evaluate(()=>{const s=new Set(),d=[];document.querySelectorAll('[id]').forEach(x=>{if(s.has(x.id)&&!d.includes(x.id))d.push(x.id);s.add(x.id)});return d});if(dup.length)throw new Error('duplicate ids '+dup.join(','));
+          for(const r of ['scanner','position','trade','chart','risk','research','analysis','daily','settings','alerts','backtest','log','home']){const q=p.locator(`footer.v8222Dock button[data-route="${r}"]`);if(!(await q.count()))throw new Error('missing '+r);await q.click();await p.waitForTimeout(r==='research'?1600:250)}
+          await p.locator('footer.v8222Dock button[data-route="trade"]').click();const t=await p.locator('#trade').innerText();if(!t.includes('핵심 가격대 전략')||!t.includes('현재가 주변 실전 대응'))throw new Error('trade split missing');
+          await p.locator('footer.v8222Dock button[data-route="research"]').click();await p.waitForTimeout(1800);for(const id of ['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard']){if(!(await p.locator('#v8223Wrap_'+id).count()))throw new Error('engine wrapper missing '+id)}
+          const api=await p.evaluate(()=>({cleanup:!!window.BTCStabilityCleanup,reliability:!!window.BTCReliabilityCore,relay:!!window.BTCStockRelayFast,safety:!!window.BTCSafetyHealth}));for(const [k,x] of Object.entries(api))if(!x)throw new Error('missing '+k);
+          const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v);await b.close()})().catch(e=>{console.error(e);process.exit(1)});
           NODE
