@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.1",
   "engineVersion": "8.20.0",
-  "generatedAt": "2026-08-29T01:59:41.329431+00:00",
+  "generatedAt": "2026-08-29T01:59:45.391245+00:00",
   "source": "Kraken 4H OHLC + Deribit BTC-PERPETUAL public API; no account keys; no real orders",
   "market": {
     "price": 77807.9,
@@ -14,13 +14,13 @@
   "marketStructure": {
     "healthy": true,
     "funding": 3.7e-07,
-    "mark": 77806.57,
+    "mark": 77806.37,
     "index": 77795.38,
-    "basis": 0.00014383887577902862,
+    "basis": 0.00014126802902679678,
     "openInterest": 886365820.0,
-    "oiChange": 0.0002665750021215858,
-    "heat": 2,
-    "bias": -0.0026786604314184654
+    "oiChange": 0.0,
+    "heat": 1,
+    "bias": -0.0024136671504466135
   },
   "optimizer": {
     "ok": true,
@@ -134,9 +134,9 @@
   "monteCarlo": {
     "paths": 3000,
     "steps": 42,
-    "terminalPriceP10": 73905.46735656966,
-    "terminalPriceMedian": 79033.95981563629,
-    "terminalPriceP90": 84829.549643638
+    "terminalPriceP10": 73905.56562260973,
+    "terminalPriceMedian": 79034.06490061234,
+    "terminalPriceP90": 84829.66243453458
   },
   "terminalWallet": {
     "rankedActions": [
@@ -153,52 +153,52 @@
       {
         "id": "SHORT_0.050",
         "valid": true,
-        "expectedWallet": 3612.3743885226286,
-        "p10": 3592.942242592141,
-        "worst": 3546.2808857499026,
+        "expectedWallet": 3612.3740200608963,
+        "p10": 3592.941848293078,
+        "worst": 3546.2804294090593,
         "recoveryProbability": 0.0,
         "guardDistance": 42703.82456015971,
-        "utility": 4485.590925616048
+        "utility": 4485.590432660419
       },
       {
         "id": "SHORT_0.025",
         "valid": true,
-        "expectedWallet": 3575.7703275694025,
-        "p10": 3417.25368130094,
-        "worst": 3036.6162661936673,
+        "expectedWallet": 3575.767321863379,
+        "p10": 3417.250464828327,
+        "worst": 3036.6125436186903,
         "recoveryProbability": 0.0,
         "guardDistance": 35042.77618317796,
-        "utility": 4362.882690448958
+        "utility": 4362.878669190914
       },
       {
         "id": "HOLD",
         "valid": true,
-        "expectedWallet": 3539.166266616177,
-        "p10": 3241.5651200097313,
-        "worst": 2526.9516466374325,
+        "expectedWallet": 3539.1606236658617,
+        "p10": 3241.559081363576,
+        "worst": 2526.944657828336,
         "recoveryProbability": 0.0,
         "guardDistance": 29807.900000000052,
-        "utility": 4240.174455281866
+        "utility": 4240.16690572141
       },
       {
         "id": "LONG_0.025",
         "valid": true,
-        "expectedWallet": 3502.6245767140717,
-        "p10": 3066.175907159041,
-        "worst": 2018.1554164588233,
+        "expectedWallet": 3502.6163010129007,
+        "p10": 3066.1670511478687,
+        "worst": 2018.145166980726,
         "recoveryProbability": 0.0,
         "guardDistance": 25646.64535271156,
-        "utility": 4117.675299791762
+        "utility": 4117.664227940548
       },
       {
         "id": "LONG_0.050",
         "valid": true,
-        "expectedWallet": 3466.0828868119547,
-        "p10": 2890.786694308343,
-        "worst": 1509.3591862801854,
+        "expectedWallet": 3466.071978359928,
+        "p10": 2890.7750209321466,
+        "worst": 1509.3456761331013,
         "recoveryProbability": 0.0,
         "guardDistance": 22445.737375355042,
-        "utility": 3995.176144301642
+        "utility": 3995.161550159667
       }
     ],
     "modelBest": {
@@ -214,12 +214,12 @@
     "executable": {
       "id": "HOLD",
       "valid": true,
-      "expectedWallet": 3539.166266616177,
-      "p10": 3241.5651200097313,
-      "worst": 2526.9516466374325,
+      "expectedWallet": 3539.1606236658617,
+      "p10": 3241.559081363576,
+      "worst": 2526.944657828336,
       "recoveryProbability": 0.0,
       "guardDistance": 29807.900000000052,
-      "utility": 4240.174455281866
+      "utility": 4240.16690572141
     },
     "currentNetClose": 3617.4931330527406,
     "targetWallet": 69936.3
@@ -233,7 +233,7 @@
     "evidenceBarTime": 1787947200000
   },
   "lastDecision": {
-    "at": "2026-08-29T01:59:41.329431+00:00",
+    "at": "2026-08-29T01:59:45.391245+00:00",
     "price": 77807.9,
     "evidenceBarTime": 1787947200000,
     "evidencePrice": 77841.8,
@@ -243,7 +243,7 @@
     "governanceApproved": true,
     "modelBest": "EXIT_ALL",
     "executable": "HOLD",
-    "expectedWallet": 3539.166266616177,
+    "expectedWallet": 3539.1606236658617,
     "recoveryProbability": 0.0,
     "forwardFromPrior": null
   },
@@ -396,12 +396,12 @@
     "targetWallet": 69936.3,
     "currentNetClose": 3617.4931330527406,
     "progress": 0.051725543573977184,
-    "expectedWallet": 3539.166266616177,
-    "p10Wallet": 3241.5651200097313,
-    "worstWallet": 2526.9516466374325,
+    "expectedWallet": 3539.1606236658617,
+    "p10Wallet": 3241.559081363576,
+    "worstWallet": 2526.944657828336,
     "recoveryProbability": 0.0,
-    "downsideToWorst": 1090.541486415308,
-    "recoveryUtility": 4346.910773368867,
+    "downsideToWorst": 1090.5484752244047,
+    "recoveryUtility": 4346.900126352464,
     "priority": [
       "10K hard guard",
       "survival/worst wallet",
@@ -419,5 +419,5 @@
     "independentConfirmed4hEvidence": true,
     "reason": "Independent active-action closed-4H sample >=30 required before automatic promotion."
   },
-  "enhancedAt": "2026-08-29T01:59:42.212492+00:00"
+  "enhancedAt": "2026-08-29T01:59:46.161885+00:00"
 }
