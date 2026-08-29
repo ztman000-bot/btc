@@ -1,7 +1,7 @@
-/* BTC Hedge Assistant v8.23.7 - Reliability Core 1.1 */
+/* BTC Hedge Assistant v8.23.8 - Reliability Core 1.1 */
 (()=>{'use strict';
 if(window.__BTC_RELIABILITY_CORE__&&window.BTCReliabilityCore)return;window.__BTC_RELIABILITY_CORE__=true;
-const V='8.23.7',S={startedAt:Date.now(),lastCheck:0,lastPrice:null,lastPriceAt:0,lastObservedAt:0,lastSourceStamp:null,failClosed:false,reasons:[],checks:0,recoveries:0};
+const V='8.23.8',S={startedAt:Date.now(),lastCheck:0,lastPrice:null,lastPriceAt:0,lastObservedAt:0,lastSourceStamp:null,failClosed:false,reasons:[],checks:0,recoveries:0};
 const cfg=()=>window.BTC_APP_CONFIG?.safety||{};function n(v){v=Number(v);return Number.isFinite(v)?v:null}
 function read(){const m=window.market||{},els=[document.getElementById('livePrice'),document.getElementById('btcCurrentPrice'),document.querySelector('[data-btc-price]')];const cand=[m.price,...els.map(e=>e?.textContent)];let p=null;for(const x of cand){const v=n(String(x??'').replace(/[^0-9.-]/g,''));if(v&&v>1000){p=v;break}}const stamp=m.updatedAt||m.timestamp||m.ts||m.lastUpdate||els.map(e=>e?.dataset?.updatedAt||e?.dataset?.timestamp).find(Boolean)||null;return{price:p,stamp}}
 function modules(){const keys=['BTCSafetyCore','BTCRegimeHedge','BTCAdaptiveLearning','BTCStrategyGovernance','BTCTerminalWallet','BTCRecoveryEngine','BTCStabilityGuard','BTCStartupHealth'];return keys.filter(k=>!window[k])}
