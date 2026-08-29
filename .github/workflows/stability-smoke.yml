@@ -48,6 +48,7 @@ jobs:
           boot=Path('version-guard.js').read_text(encoding='utf-8')
           sw=Path('sw.js').read_text(encoding='utf-8')
           stab=Path('stability-guard.js').read_text(encoding='utf-8')
+          cleanup=Path('stability-cleanup.js').read_text(encoding='utf-8')
           safety=Path('safety-core.js').read_text(encoding='utf-8')
           shell=Path('v850-shell.js').read_text(encoding='utf-8')
           patch=Path('v8223-ui.js').read_text(encoding='utf-8')
@@ -55,9 +56,10 @@ jobs:
           recovery=Path('recovery-v2-ui.js').read_text(encoding='utf-8')
           health=Path('research-health.js').read_text(encoding='utf-8')
           m=re.search(r"version:'(8\.22\.\d+)'",cfg)
-          assert m and m.group(1)=='8.22.3', 'canonical version must be v8.22.3'
+          assert m, 'canonical 8.22.x version missing from app-config'
+          version=m.group(1)
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
-          for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js']:
+          for name in ['safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
           assert 'BTC_DECISION_ALLOWED===true' in safety.replace(' ',''), 'central safety must be fail-closed'
@@ -69,10 +71,15 @@ jobs:
           for card in ['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard']:
               assert card in patch, f'missing restored strategy engine: {card}'
           assert 'v8223PriceStrip' in patch and 'setInterval(updatePrice,2000)' in patch, 'persistent price strip missing'
-          assert "searchParams.get('v')" in sw and 'v8223-ui.js' in sw, 'service worker must follow canonical version and include UI patch'
+          assert f"const APP_VERSION='{version}'" in sw, 'service worker cache version must match canonical config'
+          for asset in ['v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','stability-cleanup.js']:
+              assert asset in sw, f'service worker missing managed asset: {asset}'
           assert "BTC_APP_CONFIG?.version" in stab and "register('./sw.js?v='" in stab, 'service worker registration must use canonical app version'
+          assert 'BTC_APP_CONFIG?.version' in cleanup and "register('./sw.js?v='" in cleanup, 'cleanup guard must follow canonical app version'
           legacy=Path('index.html').read_text(encoding='utf-8')
           if re.search(r'\bchanged\s*=\s*False\b|\bchanged\s*=\s*True\b', legacy):
               print('WARNING: legacy scanner source still contains Python-style booleans; runtime guard patches this path.')
-          print('stability architecture assertions passed for',m.group(1))
+          if 'sw.js?v=8188' in legacy:
+              print('INFO: legacy SW registration remains in index, but canonical SW ignores legacy query and cleanup re-registers current version.')
+          print('stability architecture assertions passed for',version)
           PY
