@@ -5,6 +5,7 @@ const V='8.23.1',TIMEOUT=55000,CONCURRENCY=3;let running=false,runSeq=0;
 const $=id=>document.getElementById(id);const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function getWatch(){try{return Array.isArray(scannerWatch)?scannerWatch:[]}catch(e){return[]}}
 function setRank(html){const el=$('scanRanks');if(el)el.innerHTML=html}
+function setFinalStatus(html){const rank=$('scanRanks');if(!rank)return;let el=$('scanBatchFinalStatus');if(!el){el=document.createElement('div');el.id='scanBatchFinalStatus';el.className='tiny';el.style.cssText='margin:8px 0 10px;line-height:1.55;color:#9fb0c3';rank.parentNode?.insertBefore(el,rank)}el.innerHTML=html}
 function button(){return [...document.querySelectorAll('#scanner button')].find(b=>(b.textContent||'').trim()==='전체 스캔'||b.dataset.scanAll==='1')||null}
 function withTimeout(p,ms,label){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label+' 시간초과')),ms))])}
 function renderSafe(){try{renderWatchlist()}catch(e){};try{renderV79Ranking()}catch(e){}}
@@ -16,7 +17,7 @@ async function wholeScan(){
  async function worker(){while(next<watch.length&&seq===runSeq){const idx=next++,w=watch[idx];try{const r=await withTimeout(Promise.resolve(analyzeScannerSymbol(w.symbol,w.type)),TIMEOUT,w.symbol);if(r)results.push(r);else failed.push(w.symbol+' 결과없음')}catch(e){failed.push(w.symbol+' '+String(e?.message||e))}finally{done++;if(b)b.textContent=`스캔 ${done}/${watch.length}`;setRank(`전체 스캔 중 · ${done}/${watch.length} 완료 · 성공 ${results.length} · 실패 ${failed.length}${failed.length?`<br><span class="tiny">최근 실패: ${failed.at(-1)}</span>`:''}`);renderSafe()}}}
  await Promise.all(Array.from({length:Math.min(CONCURRENCY,watch.length)},worker));
  try{scannerRankResults=results}catch(e){window.scannerRankResults=results}renderSafe();
- setRank(results.length?`전체 스캔 완료 · ${results.length}/${watch.length} 성공${failed.length?` · 실패 ${failed.length}`:''}<br><span class="tiny">완료 ${new Date().toLocaleTimeString()} · 실패 종목은 데이터 연결 실패로 신호에서 제외</span>`:`전체 스캔 실패 · ${watch.length}개 종목에서 유효 데이터를 받지 못했습니다.<br><span class="tiny">${failed.slice(0,3).join(' · ')}</span>`);
+ setFinalStatus(results.length?`전체 스캔 완료 · ${results.length}/${watch.length} 성공${failed.length?` · 실패 ${failed.length}`:''}<br>완료 ${new Date().toLocaleTimeString()} · 실패 종목은 데이터 연결 실패로 신호에서 제외`:`전체 스캔 실패 · ${watch.length}개 종목에서 유효 데이터를 받지 못했습니다.<br>${failed.slice(0,3).join(' · ')}`);
  if(b){b.disabled=false;b.textContent=old}running=false;document.dispatchEvent(new CustomEvent('btc-whole-scan-complete',{detail:{version:V,total:watch.length,success:results.length,failed:failed.length}}));
 }
 function bind(){const b=button();if(!b)return false;b.dataset.scanAll='1';b.onclick=e=>{e.preventDefault();e.stopPropagation();wholeScan()};return true}
