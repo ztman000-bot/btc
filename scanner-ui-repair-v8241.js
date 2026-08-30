@@ -1,0 +1,18 @@
+/* BTC Hedge Assistant v8.24.1 - scanner action / strategy view repair */
+(()=>{'use strict';
+if(window.__BTC_SCANNER_UI_REPAIR_8241__)return;window.__BTC_SCANNER_UI_REPAIR_8241__=true;
+const V='8.24.1',$=id=>document.getElementById(id);let scanning=false;
+function watchlist(){try{if(Array.isArray(window.scannerWatch))return window.scannerWatch;const a=JSON.parse(localStorage.getItem('v831watch')||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+function strategyPage(){const p=$('strategyPosition');if(!p)return null;p.classList.add('v8222Page');p.classList.remove('v853Active');p.style.removeProperty('display');return p}
+function openStrategy(){const sym=$('scanSymbol')?.value||'BTCUSDT',type=$('scanType')?.value||'crypto';const api=window.BTCStrategyPosition;if(api?.open){api.open(sym,type);setTimeout(()=>{const p=strategyPage();if(p&&window.BTCV853?.activatePane)window.BTCV853.activatePane(p,'scanner-strategy');else if(p){document.querySelectorAll('main>.v8222Page,main>.v8221Page').forEach(x=>x.classList.remove('v8222Active','v8221Active','activePane'));p.classList.add('v8222Active');window.scrollTo({top:0,behavior:'auto'})}},0);return}const box=$('scannerResult')||$('scanner');if(box){const n=document.createElement('div');n.className='notice';n.textContent='전략 분석 모듈을 아직 불러오는 중입니다. 잠시 후 다시 눌러 주세요.';box.prepend(n)}}
+function bindStrategy(){const b=$('spScannerBtn');if(!b||b.dataset.v8241Bound)return false;b.dataset.v8241Bound='1';b.onclick=e=>{e.preventDefault();e.stopPropagation();openStrategy()};return true}
+function scanButton(){return [...document.querySelectorAll('#scanner button')].find(b=>b.dataset.scanAll==='1'||/전체 스캔|스캔 \d+\//.test((b.textContent||'').trim()))||null}
+function rank(msg){const e=$('scanRanks');if(e)e.innerHTML=msg}
+async function wholeScan(){if(scanning)return;const list=watchlist();if(!list.length){rank('스캔할 관심종목이 없습니다.');return}if(typeof window.analyzeScannerSymbol!=='function'){rank('스캐너 분석 엔진이 준비되지 않았습니다. 새로고침 후 다시 시도해 주세요.');return}scanning=true;const b=scanButton(),old=b?.textContent||'전체 스캔';if(b){b.disabled=true;b.dataset.scanAll='1'}const out=[],fail=[];let next=0,done=0;rank(`전체 스캔 시작 · 0/${list.length}`);
+async function worker(){while(next<list.length){const w=list[next++];try{const r=await Promise.race([Promise.resolve(window.analyzeScannerSymbol(w.symbol,w.type)),new Promise((_,rej)=>setTimeout(()=>rej(new Error('시간초과')),55000))]);if(r)out.push(r);else fail.push(w.symbol)}catch(e){fail.push(w.symbol)}finally{done++;if(b)b.textContent=`스캔 ${done}/${list.length}`;rank(`전체 스캔 중 · ${done}/${list.length} · 성공 ${out.length} · 실패 ${fail.length}`)}}}
+try{await Promise.all(Array.from({length:Math.min(3,list.length)},worker));window.scannerRankResults=out;try{window.renderWatchlist?.()}catch(e){}try{window.renderV79Ranking?.()}catch(e){}if(!out.length)rank(`전체 스캔 완료 · 유효 결과 0/${list.length} · 데이터 연결 실패 ${fail.length}`);document.dispatchEvent(new CustomEvent('btc-whole-scan-complete',{detail:{version:V,total:list.length,success:out.length,failed:fail.length}}))}finally{scanning=false;if(b){b.disabled=false;b.textContent=old}}}
+function bindScan(){const b=scanButton();if(!b||b.dataset.v8241Bound)return false;b.dataset.v8241Bound='1';b.dataset.scanAll='1';b.onclick=e=>{e.preventDefault();e.stopPropagation();wholeScan()};return true}
+function repair(){strategyPage();bindStrategy();bindScan()}
+function init(){repair();[250,700,1500,3000].forEach(ms=>setTimeout(repair,ms));new MutationObserver(repair).observe(document.body,{childList:true,subtree:true})}
+window.BTCScannerUIRepair={version:V,repair,scan:wholeScan,openStrategy,status:()=>({scanning})};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
