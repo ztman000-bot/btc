@@ -49,10 +49,11 @@ jobs:
           relay=Path('stock-relay-fast-v8234.js').read_text(encoding='utf-8')
           trade=Path('trade-ladder-ui-v8236.js').read_text(encoding='utf-8')
           patch=Path('v8223-ui.js').read_text(encoding='utf-8')
-          m=re.search(r"version:'(8\.23\.\d+)'",cfg); assert m, 'canonical version missing'; version=m.group(1)
+          forward=Path('forward-validation-v8250.js').read_text(encoding='utf-8')
+          m=re.search(r"version:'(8\.25\.\d+)'",cfg); assert m, 'canonical version missing'; version=m.group(1)
           assert version in boot, 'bootstrap version mismatch'
           assert f"const APP_VERSION='{version}'" in sw, 'service worker version mismatch'
-          required=['safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','scanner-batch-v8231.js','scanner-selection-fix-v8233.js','stock-relay-fast-v8234.js','top10-fast-v8232.js','trade-ladder-ui-v8236.js','stability-cleanup.js','reliability-core.js']
+          required=['safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','scanner-batch-v8231.js','scanner-selection-fix-v8233.js','stock-relay-fast-v8234.js','top10-fast-v8232.js','trade-ladder-ui-v8236.js','stability-cleanup.js','reliability-core.js','forward-validation-v8250.js']
           for name in required:
               assert name in boot, f'bootstrap missing {name}'
               assert name in sw, f'SW missing {name}'
@@ -61,6 +62,9 @@ jobs:
           assert 'priceReceiptAgeMs' in reliability and 'btc-price-received' in reliability, 'receipt freshness missing'
           assert 'TIMEOUT=5000' in relay and 'valid(x,symbol)' in relay and 'raw.githubusercontent.com/ztman000-bot/btc/main/data/stocks' in relay, 'stock relay guards incomplete'
           assert '핵심 가격대 전략' in trade and '현재가 주변 실전 대응' in trade, 'trade ladder split missing'
+          assert 'btc:forward-validation:v1' in forward and 'HORIZONS' in forward, 'forward persistence missing'
+          assert all(x in forward for x in ['mfePct','maePct','calibration','capture(','evaluate(']), 'forward metrics incomplete'
+          assert 'forwardValidationReadOnly:true' in cfg, 'validation must not auto-promote strategies'
           routes=re.search(r"bottomDockRoutes:\[([^\]]+)\]",cfg); assert routes and routes.group(1).count("'")//2==13, '13 route contract failed'
           for card in ['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard']:
               assert card in patch, f'missing engine {card}'
@@ -79,7 +83,7 @@ jobs:
           exit 1
       - name: 4. Install browser driver
         run: npm install --no-save playwright-core@1.55.0
-      - name: 5. Mobile browser / route / relay / fail-closed APIs
+      - name: 5. Mobile browser / route / relay / forward validation / fail-closed APIs
         run: |
           node <<'NODE'
           const {chromium}=require('playwright-core'),fs=require('fs');
@@ -88,13 +92,14 @@ jobs:
           (async()=>{
             const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});
             const p=await b.newPage({viewport:{width:430,height:932}});const errs=[];p.on('pageerror',e=>errs.push(String(e)));
-            await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(7500);
-            const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(!/^8\.23\.\d+$/.test(v))throw new Error('bad version '+v);
+            await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(8000);
+            const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(!/^8\.25\.\d+$/.test(v))throw new Error('bad version '+v);
             const routeCount=await p.locator('footer.v8222Dock button[data-route]').count();if(routeCount!==13)throw new Error('route count '+routeCount);
             const dup=await p.evaluate(()=>{const s=new Set(),d=[];document.querySelectorAll('[id]').forEach(x=>{if(s.has(x.id)&&!d.includes(x.id))d.push(x.id);s.add(x.id)});return d});if(dup.length)throw new Error('duplicate ids '+dup.join(','));
-            for(const r of ['scanner','position','trade','chart','risk','research','analysis','daily','settings','alerts','backtest','log','home']){const btn=p.locator(`footer.v8222Dock button[data-route="${r}"]`);if(!(await btn.count()))throw new Error('missing route '+r);await btn.click();await p.waitForTimeout(r==='research'?1800:250)}
+            for(const r of ['scanner','position','trade','chart','risk','research','analysis','daily','settings','alerts','backtest','log','home']){const btn=p.locator(`footer.v8222Dock button[data-route="${r}"]`);if(!(await btn.count()))throw new Error('missing route '+r);await btn.click();await p.waitForTimeout(r==='research'?1800:r==='analysis'?900:250)}
             await p.locator('footer.v8222Dock button[data-route="trade"]').click();await p.waitForTimeout(300);const tt=await p.locator('#trade').innerText();if(!tt.includes('핵심 가격대 전략')||!tt.includes('현재가 주변 실전 대응'))throw new Error('trade split UI missing');
-            const apis=await p.evaluate(()=>({boot:!!window.BTCBootstrap,reliability:!!window.BTCReliabilityCore,safety:!!window.BTCSafetyHealth,cleanup:!!window.BTCStabilityCleanup,relay:!!window.BTCStockRelayFast}));for(const [k,x] of Object.entries(apis))if(!x)throw new Error('missing API '+k);
+            await p.locator('footer.v8222Dock button[data-route="analysis"]').click();await p.waitForTimeout(1200);if(!(await p.locator('#btcForwardValidationCard').count()))throw new Error('forward validation card missing');
+            const apis=await p.evaluate(()=>({boot:!!window.BTCBootstrap,reliability:!!window.BTCReliabilityCore,safety:!!window.BTCSafetyHealth,cleanup:!!window.BTCStabilityCleanup,relay:!!window.BTCStockRelayFast,forward:!!window.BTCForwardValidation,forwardStatus:window.BTCForwardValidation?.status?.()}));for(const [k,x] of Object.entries(apis))if(k!=='forwardStatus'&&!x)throw new Error('missing API '+k);if(!apis.forwardStatus||apis.forwardStatus.version!=='8.25.0')throw new Error('forward status invalid '+JSON.stringify(apis.forwardStatus));
             const rr=await p.evaluate(()=>window.BTCStockRelayFast.test('068270.KS').then(x=>({symbol:x.symbol,price:x.price,m15:x.m15.length,h1:x.h1.length,d1:x.d1.length,w1:x.w1.length,source:x.source})));if(rr.symbol!=='068270.KS'||rr.price<=0||Math.min(rr.m15,rr.h1,rr.d1,rr.w1)<=10)throw new Error('relay test failed '+JSON.stringify(rr));
             const fatal=errs.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error('fatal page errors '+fatal.slice(0,8).join(' | '));
             console.log('MOBILE BROWSER PASS',v,rr.source);await b.close();
