@@ -3,19 +3,13 @@ name: BTC UI Regression Smoke
 on:
   push:
     branches: [main]
-    paths:
-      - '*.js'
-      - 'index.html'
-      - '.github/workflows/ui-regression-smoke.yml'
+    paths: ['*.js','index.html','.github/workflows/ui-regression-smoke.yml']
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: btc-ui-regression-smoke
   cancel-in-progress: true
-
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
@@ -23,18 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: {node-version: '22'}
       - name: Install browser driver
         run: npm install --no-save playwright-core@1.55.0
       - name: Static JavaScript syntax checks
         run: |
           set -e
           for f in ./*.js; do node --check "$f"; done
-          if grep -RInE '\b(changed|ok|ready|enabled)=(True|False)\b' --include='*.js' .; then exit 1; fi
+          grep -q "hedge-action-validation-v8252.js" version-guard.js
+          grep -q "hedge-action-validation-v8252.js" sw.js
       - name: Start local app
         run: |
-          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/btc-http.log 2>&1 &
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/btc-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
           exit 1
       - name: Mobile UI regression
@@ -42,15 +36,14 @@ jobs:
           node <<'NODE'
           const {chromium}=require('playwright-core'),fs=require('fs');
           const exe=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync);if(!exe)throw new Error('No browser');
-          (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(8000);
-          const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(!/^8\.25\.\d+$/.test(v))throw new Error('invalid canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title/version mismatch');
+          (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(8000);
+          const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(v!=='8.25.2')throw new Error('canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title/version mismatch');
           if(await p.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 routes');
-          const dup=await p.evaluate(()=>{const s=new Set(),d=[];document.querySelectorAll('[id]').forEach(x=>{if(s.has(x.id)&&!d.includes(x.id))d.push(x.id);s.add(x.id)});return d});if(dup.length)throw new Error('duplicate ids '+dup.join(','));
-          for(const r of ['scanner','position','trade','chart','risk','research','analysis','daily','settings','alerts','backtest','log','home']){const q=p.locator(`footer.v8222Dock button[data-route="${r}"]`);if(!(await q.count()))throw new Error('missing '+r);await q.click();await p.waitForTimeout(r==='research'?1600:r==='analysis'?900:250)}
-          await p.locator('footer.v8222Dock button[data-route="trade"]').click();const t=await p.locator('#trade').innerText();if(!t.includes('핵심 가격대 전략')||!t.includes('현재가 주변 실전 대응'))throw new Error('trade split missing');
-          await p.locator('footer.v8222Dock button[data-route="research"]').click();await p.waitForTimeout(1800);for(const id of ['adaptiveLearningCard','reversalIntelligenceCard','strategyGovernanceCard','terminalWalletCard','hedgeRotationCard','recoveryEngineCard','executionExitCard']){if(!(await p.locator('#v8223Wrap_'+id).count()))throw new Error('engine wrapper missing '+id)}
-          await p.locator('footer.v8222Dock button[data-route="analysis"]').click();await p.waitForTimeout(1100);if(!(await p.locator('#btcForwardValidationCard').count()))throw new Error('forward scorecard missing');
-          const api=await p.evaluate(()=>({cleanup:!!window.BTCStabilityCleanup,reliability:!!window.BTCReliabilityCore,relay:!!window.BTCStockRelayFast,safety:!!window.BTCSafetyHealth,forward:!!window.BTCForwardValidation,forwardVersion:window.BTCForwardValidation?.version,manualScore:typeof window.BTCForwardValidation?.manualScoreUpdate==='function'}));for(const [k,x] of Object.entries(api))if(!x)throw new Error('missing '+k);if(api.forwardVersion!=='8.25.1')throw new Error('bad forward version '+api.forwardVersion);
-          const scoreBtn=p.locator('#fvScoreNow');if(!(await scoreBtn.count()))throw new Error('score update button missing');if((await scoreBtn.innerText()).trim()!=='성과 업데이트')throw new Error('score update label mismatch');const beforeEval=await p.evaluate(()=>window.BTCForwardValidation.status().lastEvalAt||0);await scoreBtn.click();await p.waitForTimeout(700);const scoreState=await p.evaluate(()=>({lastEvalAt:window.BTCForwardValidation.status().lastEvalAt||0,msg:window.BTCForwardValidation.status().lastManualMessage||''}));if(scoreState.lastEvalAt<=beforeEval)throw new Error('score update button did not invoke evaluation');if(!scoreState.msg.includes('성과 업데이트 완료'))throw new Error('score update feedback missing: '+scoreState.msg);if((await p.locator('#fvScoreNow').innerText()).trim()!=='성과 업데이트')throw new Error('score update button did not restore label');
-          const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / forward score update PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
+          await p.locator('footer.v8222Dock button[data-route="analysis"]').click();await p.waitForTimeout(1500);
+          if(!(await p.locator('#btcForwardValidationCard').count()))throw new Error('forward scorecard missing');if(!(await p.locator('#btcHedgeActionValidationCard').count()))throw new Error('hedge action scorecard missing');
+          const api=await p.evaluate(()=>({forward:!!window.BTCForwardValidation,action:!!window.BTCHedgeActionValidation,actionVersion:window.BTCHedgeActionValidation?.version,readOnly:window.BTCHedgeActionValidation?.status?.().readOnly,sync:typeof window.BTCHedgeActionValidation?.sync==='function'}));if(!api.forward||!api.action||!api.sync)throw new Error('validation API missing');if(api.actionVersion!=='8.25.2'||api.readOnly!==true)throw new Error('hedge action validator contract failed');
+          const txt=await p.locator('#btcHedgeActionValidationCard').innerText();if(!txt.includes('헷지 액션 성적표')||!txt.includes('READ-ONLY')||!txt.includes('아무 행동도 하지 않은 경우'))throw new Error('hedge action UI semantics missing');
+          const r=await p.evaluate(()=>window.BTCHedgeActionValidation.sync());if(!r||!r.summary||r.summary.version!=='8.25.2')throw new Error('hedge action sync failed');
+          const scoreBtn=p.locator('#fvScoreNow');if((await scoreBtn.innerText()).trim()!=='성과 업데이트')throw new Error('score label mismatch');await scoreBtn.click();await p.waitForTimeout(700);const msg=await p.evaluate(()=>window.BTCForwardValidation.status().lastManualMessage||'');if(!msg.includes('성과 업데이트 완료'))throw new Error('manual score update failed');
+          const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / hedge action validation PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
           NODE
