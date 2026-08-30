@@ -1,9 +1,9 @@
-/* BTC Hedge Assistant v8.7 - canonical version lock updater */
+/* BTC Hedge Assistant v8.25.0 - canonical version lock updater */
 (function(){
 'use strict';
 if(window.__BTC_UPDATER_SINGLETON)return;
 window.__BTC_UPDATER_SINGLETON=true;
-const CANONICAL_VERSION='8.7';
+const CANONICAL_VERSION='8.25.0';
 const CONFIG_ID='btcCanonicalAppConfig';
 const BOOT_ID='btcCanonicalBootstrap';
 
