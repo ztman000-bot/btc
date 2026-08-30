@@ -10,12 +10,16 @@ on:
     paths:
       - 'scripts/strategy_lab_server.py'
       - '.github/workflows/strategy-lab-server.yml'
+  pull_request:
+    paths:
+      - 'scripts/strategy_lab_server.py'
+      - '.github/workflows/strategy-lab-server.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: btc-strategy-lab
+  group: btc-strategy-lab-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -33,7 +37,25 @@ jobs:
           python-version: '3.12'
       - name: Build strategy lab data
         run: python scripts/strategy_lab_server.py
+      - name: Validate risk-return metrics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('data/research/lab-latest.json').read_text(encoding='utf-8'))
+          required=('expectancyPct','profitFactor','avgWinPct','avgLossPct','payoffRatio','grossProfitPct','grossLossPct')
+          assert d.get('strategies'), 'strategy results missing'
+          for s in d['strategies']:
+              missing=[k for k in required if k not in s]
+              assert not missing, f"{s.get('id','?')} missing metrics: {missing}"
+              assert s.get('n',0) >= 0
+          live=d.get('live',{})
+          missing=[k for k in required if k not in live]
+          assert not missing, f'live missing metrics: {missing}'
+          print('strategy lab metrics validated:', len(d['strategies']), 'strategies')
+          PY
       - name: Commit lab state conflict-safe
+        if: github.event_name != 'pull_request'
         run: |
           set -e
           git config user.name "btc-strategy-lab-bot"
