@@ -1,9 +1,9 @@
-/* BTC Hedge Assistant v8.25.0 - canonical version lock updater */
+/* BTC Hedge Assistant v8.7 - canonical version lock updater */
 (function(){
 'use strict';
 if(window.__BTC_UPDATER_SINGLETON)return;
 window.__BTC_UPDATER_SINGLETON=true;
-const CANONICAL_VERSION='8.25.0';
+const CANONICAL_VERSION='8.7';
 const CONFIG_ID='btcCanonicalAppConfig';
 const BOOT_ID='btcCanonicalBootstrap';
 
@@ -34,8 +34,6 @@ function loadOnce(id,src){
 
 async function boot(){
   try{
-    // Lock a correct fallback immediately so legacy shells cannot temporarily
-    // downgrade the visible version while app-config is still loading.
     window.BTC_APP_VERSION=CANONICAL_VERSION;
     applyVersion();
 
@@ -58,8 +56,6 @@ async function boot(){
   }
 }
 
-// Re-apply after every canonical config/bootstrap transition. This prevents
-// older compatibility modules from writing their historical fallback version.
 document.addEventListener('btc-app-config-ready',applyVersion);
 document.addEventListener('btc-bootstrap-ready',applyVersion);
 if(document.readyState==='loading'){
