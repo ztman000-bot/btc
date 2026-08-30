@@ -7,7 +7,7 @@ OUT=os.path.join(ROOT,'data','research','lab-latest.json')
 HIST=os.path.join(ROOT,'data','research','lab-history.json')
 
 def jget(url):
-    req=urllib.request.Request(url,headers={'User-Agent':'btc-strategy-lab/2.0'})
+    req=urllib.request.Request(url,headers={'User-Agent':'btc-strategy-lab/2.1'})
     with urllib.request.urlopen(req,timeout=25) as r:return json.loads(r.read().decode())
 
 def load(path,default):
@@ -58,6 +58,28 @@ def rules():
       ('C','후보 C · 보수형',24,72,.0030),
     ]
 
+def performance_metrics(vals):
+    vals=[float(v) for v in vals if v is not None]
+    if not vals:
+        return {'expectancyPct':None,'profitFactor':None,'avgWinPct':None,'avgLossPct':None,'payoffRatio':None,'grossProfitPct':0.0,'grossLossPct':0.0}
+    wins=[v for v in vals if v>0]
+    losses=[v for v in vals if v<0]
+    gross_profit=sum(wins)
+    gross_loss=abs(sum(losses))
+    avg_win=statistics.mean(wins) if wins else None
+    avg_loss=abs(statistics.mean(losses)) if losses else None
+    pf=(gross_profit/gross_loss) if gross_loss>0 else (None if gross_profit<=0 else 999.0)
+    payoff=(avg_win/avg_loss) if avg_win is not None and avg_loss and avg_loss>0 else None
+    return {
+        'expectancyPct':statistics.mean(vals),
+        'profitFactor':pf,
+        'avgWinPct':avg_win,
+        'avgLossPct':avg_loss,
+        'payoffRatio':payoff,
+        'grossProfitPct':gross_profit,
+        'grossLossPct':gross_loss,
+    }
+
 def evaluate(bars):
     closes=[b['c'] for b in bars];cache={}
     for _,_,f,s,_ in rules():
@@ -79,7 +101,8 @@ def evaluate(bars):
                 if not hit:
                     tag='횡보/약추세' if rg=='횡보' else ('급반전' if abs(ret)>=2 else '추세 지속 실패')
                     fail[tag]=fail.get(tag,0)+1
-        result.append({'id':rid,'name':name,'n':len(vals),'win':wins/len(vals)*100 if vals else None,'avg':statistics.mean(vals) if vals else None,'mdd':mdd,'regimes':regs})
+        metrics=performance_metrics(vals)
+        result.append({'id':rid,'name':name,'n':len(vals),'win':wins/len(vals)*100 if vals else None,'avg':statistics.mean(vals) if vals else None,'mdd':mdd,**metrics,'regimes':regs})
     return result,reg_all,fail
 
 def live_update(bars,hist):
@@ -95,13 +118,13 @@ def live_update(bars,hist):
         d=int(prev.get('signal',0));ret=(bar['c']/prev['price']-1)*100*d if d else 0
         prev['evaluated']=True;prev['outcomePct']=ret;prev['hit']=None if d==0 else ret>0;prev['evaluatedAt']=datetime.now(timezone.utc).isoformat()
     item={'barTime':bar['t'],'at':datetime.fromtimestamp(bar['t']/1000,timezone.utc).isoformat(),'price':bar['c'],'signal':sig,'regime':regime(i,bars,e20,e50),'evaluated':False}
-    items=(items+[item])[-500:];hist={'schemaVersion':'2.0','items':items};return hist,item
+    items=(items+[item])[-500:];hist={'schemaVersion':'2.1','items':items};return hist,item
 
 def main():
-    bars,source=fetch_bars();hist=load(HIST,{'schemaVersion':'2.0','items':[]});hist,last=live_update(bars,hist);ev,regs,fail=evaluate(bars)
+    bars,source=fetch_bars();hist=load(HIST,{'schemaVersion':'2.1','items':[]});hist,last=live_update(bars,hist);ev,regs,fail=evaluate(bars)
     live=[x for x in hist.get('items',[]) if x.get('evaluated') and x.get('hit') is not None]
-    lw=sum(1 for x in live if x.get('hit'));now=datetime.now(timezone.utc).isoformat()
-    out={'schemaVersion':'2.0','engineVersion':'strategy-lab-server-2.0','generatedAt':now,'source':source,'bars4h':len(bars),'strategies':ev,'regimes':regs,'failures':sorted([{'name':k,'count':v} for k,v in fail.items()],key=lambda x:x['count'],reverse=True)[:6],'live':{'signals':len(hist.get('items',[])),'evaluated':len(live),'winRate':lw/len(live)*100 if live else None,'last':last}}
+    lw=sum(1 for x in live if x.get('hit'));live_metrics=performance_metrics([x.get('outcomePct') for x in live]);now=datetime.now(timezone.utc).isoformat()
+    out={'schemaVersion':'2.1','engineVersion':'strategy-lab-server-2.1','generatedAt':now,'source':source,'bars4h':len(bars),'strategies':ev,'regimes':regs,'failures':sorted([{'name':k,'count':v} for k,v in fail.items()],key=lambda x:x['count'],reverse=True)[:6],'live':{'signals':len(hist.get('items',[])),'evaluated':len(live),'winRate':lw/len(live)*100 if live else None,**live_metrics,'last':last}}
     save(HIST,hist);save(OUT,out)
 
 if __name__=='__main__':main()
