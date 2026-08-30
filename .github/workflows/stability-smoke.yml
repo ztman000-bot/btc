@@ -57,11 +57,12 @@ jobs:
           health=Path('research-health.js').read_text(encoding='utf-8')
           perf=Path('performance-core.js').read_text(encoding='utf-8')
           resume=Path('chart-resume-fix-v8242.js').read_text(encoding='utf-8')
-          m=re.search(r"version:'(8\.24\.\d+)'",cfg)
-          assert m, 'canonical 8.24.x version missing from app-config'
+          forward=Path('forward-validation-v8250.js').read_text(encoding='utf-8')
+          m=re.search(r"version:'(8\.25\.\d+)'",cfg)
+          assert m, 'canonical 8.25.x version missing from app-config'
           version=m.group(1)
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
-          for name in ['performance-core.js','safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js','chart-resume-fix-v8242.js']:
+          for name in ['performance-core.js','safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js','chart-resume-fix-v8242.js','forward-validation-v8250.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
           assert 'preloadMany' in boot and 'yieldMain' in boot, 'performance-aware bootstrap missing'
           assert 'PerformanceObserver' in perf and 'yieldToMain' in perf, 'performance core missing telemetry/scheduler'
@@ -77,8 +78,11 @@ jobs:
               assert card in patch, f'missing restored strategy engine: {card}'
           assert 'v8223PriceStrip' in patch and 'setInterval(updatePrice,2000)' in patch, 'persistent price strip missing'
           assert f"const APP_VERSION='{version}'" in sw, 'service worker cache version must match canonical config'
-          for asset in ['performance-core.js','v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','stability-cleanup.js','chart-resume-fix-v8242.js']:
+          for asset in ['performance-core.js','v8223-ui.js','scanner-network-fix.js','scanner-hotfix-v8225.js','stability-cleanup.js','chart-resume-fix-v8242.js','forward-validation-v8250.js']:
               assert asset in sw, f'service worker missing managed asset: {asset}'
+          assert 'HORIZONS' in forward and "['h4',4]" in forward and "['h12',12]" in forward and "['h24',24]" in forward and "['h72',72]" in forward, 'forward horizons missing'
+          assert 'mfePct' in forward and 'maePct' in forward and 'calibration' in forward, 'forward scoring metrics missing'
+          assert 'forwardValidationReadOnly:true' in cfg, 'forward validation must remain read-only for strategy promotion'
           assert "BTC_APP_CONFIG?.version" in stab and "register('./sw.js?v='" in stab, 'service worker registration must use canonical app version'
           assert 'BTC_APP_CONFIG?.version' in cleanup and "register('./sw.js?v='" in cleanup, 'cleanup guard must follow canonical app version'
           legacy=Path('index.html').read_text(encoding='utf-8')
