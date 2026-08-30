@@ -25,7 +25,8 @@ jobs:
           set -e
           for f in ./*.js; do node --check "$f"; done
           grep -q "hedge-action-validation-v8252.js" version-guard.js
-          grep -q "hedge-action-validation-v8252.js" sw.js
+          grep -q "funding-carry-v8253.js" version-guard.js
+          grep -q "funding-carry-v8253.js" sw.js
       - name: Start local app
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/btc-http.log 2>&1 &
@@ -37,13 +38,13 @@ jobs:
           const {chromium}=require('playwright-core'),fs=require('fs');
           const exe=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync);if(!exe)throw new Error('No browser');
           (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(8000);
-          const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(v!=='8.25.2')throw new Error('canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title/version mismatch');
+          const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(v!=='8.25.3')throw new Error('canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title/version mismatch');
           if(await p.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 routes');
           await p.locator('footer.v8222Dock button[data-route="analysis"]').click();await p.waitForTimeout(1500);
-          if(!(await p.locator('#btcForwardValidationCard').count()))throw new Error('forward scorecard missing');if(!(await p.locator('#btcHedgeActionValidationCard').count()))throw new Error('hedge action scorecard missing');
-          const api=await p.evaluate(()=>({forward:!!window.BTCForwardValidation,action:!!window.BTCHedgeActionValidation,actionVersion:window.BTCHedgeActionValidation?.version,readOnly:window.BTCHedgeActionValidation?.status?.().readOnly,sync:typeof window.BTCHedgeActionValidation?.sync==='function'}));if(!api.forward||!api.action||!api.sync)throw new Error('validation API missing');if(api.actionVersion!=='8.25.2'||api.readOnly!==true)throw new Error('hedge action validator contract failed');
-          const txt=await p.locator('#btcHedgeActionValidationCard').innerText();if(!txt.includes('헷지 액션 성적표')||!txt.includes('READ-ONLY')||!txt.includes('아무 행동도 하지 않은 경우'))throw new Error('hedge action UI semantics missing');
-          const r=await p.evaluate(()=>window.BTCHedgeActionValidation.sync());if(!r||!r.summary||r.summary.version!=='8.25.2')throw new Error('hedge action sync failed');
+          if(!(await p.locator('#btcForwardValidationCard').count()))throw new Error('forward scorecard missing');if(!(await p.locator('#btcHedgeActionValidationCard').count()))throw new Error('hedge action scorecard missing');if(!(await p.locator('#btcFundingCarryCard').count()))throw new Error('funding carry card missing');
+          const api=await p.evaluate(()=>({forward:!!window.BTCForwardValidation,action:!!window.BTCHedgeActionValidation,funding:!!window.BTCFundingCarry,actionVersion:window.BTCHedgeActionValidation?.version,fundingVersion:window.BTCFundingCarry?.version,readOnly:window.BTCHedgeActionValidation?.status?.().readOnly,fundingReadOnly:window.BTCFundingCarry?.status?.().readOnly,sync:typeof window.BTCHedgeActionValidation?.sync==='function'}));if(!api.forward||!api.action||!api.funding||!api.sync)throw new Error('validation API missing');if(api.actionVersion!=='8.25.2'||api.readOnly!==true)throw new Error('hedge action validator contract failed');if(api.fundingVersion!=='8.25.3'||api.fundingReadOnly!==true)throw new Error('funding carry contract failed');
+          const txt=await p.locator('#btcHedgeActionValidationCard').innerText();if(!txt.includes('헷지 액션 성적표')||!txt.includes('READ-ONLY')||!txt.includes('아무 행동도 하지 않은 경우'))throw new Error('hedge action UI semantics missing');const ftxt=await p.locator('#btcFundingCarryCard').innerText();if(!ftxt.includes('펀딩비 · 손실회복 기여도')||!ftxt.includes('Safety/Guard'))throw new Error('funding carry UI semantics missing');
+          const r=await p.evaluate(()=>window.BTCHedgeActionValidation.sync());if(!r||!r.summary||r.summary.version!=='8.25.2')throw new Error('hedge action sync failed');const fc=await p.evaluate(()=>window.BTCFundingCarry.calc());if(!fc||fc.version!=='8.25.3'||fc.dailyUsd!==1||fc.annualUsd!==365)throw new Error('funding carry calculation failed');
           const scoreBtn=p.locator('#fvScoreNow');if((await scoreBtn.innerText()).trim()!=='성과 업데이트')throw new Error('score label mismatch');await scoreBtn.click();await p.waitForTimeout(700);const msg=await p.evaluate(()=>window.BTCForwardValidation.status().lastManualMessage||'');if(!msg.includes('성과 업데이트 완료'))throw new Error('manual score update failed');
-          const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / hedge action validation PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
+          const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / funding carry PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
           NODE
