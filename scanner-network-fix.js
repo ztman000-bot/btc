@@ -1,44 +1,30 @@
-/* BTC Hedge Assistant v8.22.3 - Scanner network hardening */
+/* BTC Hedge Assistant v8.24.0 - Unified Network Manager + Scanner hardening */
 (()=>{
 'use strict';
-const VERSION='1.0.0';
-const HOSTS=[
+if(window.__BTC_NETWORK_MANAGER_V2&&window.BTCNetwork)return;
+window.__BTC_NETWORK_MANAGER_V2=true;
+const VERSION='2.0.0';
+const NATIVE_FETCH=window.fetch.bind(window);
+const BINANCE_HOSTS=[
   'https://data-api.binance.vision',
   'https://api.binance.com',
   'https://api1.binance.com',
   'https://api2.binance.com',
   'https://api3.binance.com'
 ];
-function timeoutFetch(url,ms=3500){
-  const ctl=new AbortController();
-  const t=setTimeout(()=>ctl.abort(),ms);
-  return fetch(url,{cache:'no-store',signal:ctl.signal,mode:'cors'}).finally(()=>clearTimeout(t));
-}
-async function fetchOne(host,path){
-  const r=await timeoutFetch(host+path,3500);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
-}
-async function fastCryptoFetchJson(path,trace,label){
-  const started=Date.now();
-  const attempts=HOSTS.map(host=>fetchOne(host,path).then(json=>({host,json})).catch(error=>Promise.reject({host,error})));
-  try{
-    const winner=await Promise.any(attempts);
-    trace?.push(`✓ ${label}: ${winner.host.replace('https://','')} · ${Date.now()-started}ms`);
-    return winner.json;
-  }catch(group){
-    const errs=Array.isArray(group?.errors)?group.errors:[];
-    errs.slice(0,HOSTS.length).forEach(x=>trace?.push(`× ${label}: ${(x?.host||'unknown').replace('https://','')} · ${x?.error?.name==='AbortError'?'timeout':(x?.error?.message||'failed')}`));
-    throw new Error(`${label} 전체 경로 실패 · ${Date.now()-started}ms`);
-  }
-}
-function install(){
-  // Classic-script global function bindings are mirrored on window; replacing the property
-  // updates scanner calls without touching the large legacy index.html.
-  window.cryptoFetchJson=fastCryptoFetchJson;
-  window.BTCScannerNetworkFix={version:VERSION,hosts:[...HOSTS],fetchJson:fastCryptoFetchJson};
-  document.documentElement.dataset.scannerNetworkFix=VERSION;
-  document.dispatchEvent(new CustomEvent('btc-scanner-network-fix-ready',{detail:{version:VERSION}}));
-}
+const STATE={online:navigator.onLine!==false,lastSuccess:0,lastFailure:0,lastLatency:null,lastRoute:'',lastError:'',successes:0,failures:0,retries:0};
+const HOST_SCORE=new Map();
+const INFLIGHT=new Map();
+function emit(){const snapshot={...STATE,version:VERSION,hosts:Object.fromEntries(HOST_SCORE)};window.BTC_NETWORK_STATE=snapshot;document.dispatchEvent(new CustomEvent('btc-network-state',{detail:snapshot}));return snapshot}
+function mark(url,ok,ms,error=''){let host='';try{host=new URL(url,location.href).host}catch(e){}const prev=HOST_SCORE.get(host)||{ok:0,fail:0,avgMs:0,lastMs:0};if(ok){prev.ok++;prev.avgMs=prev.avgMs?Math.round(prev.avgMs*.75+ms*.25):ms;STATE.lastSuccess=Date.now();STATE.lastLatency=ms;STATE.lastRoute=host;STATE.lastError='';STATE.successes++}else{prev.fail++;STATE.lastFailure=Date.now();STATE.lastError=error||'network failure';STATE.failures++}prev.lastMs=ms;HOST_SCORE.set(host,prev);emit()}
+function isManaged(input){try{const u=new URL(typeof input==='string'?input:input.url,location.href);if(BINANCE_HOSTS.some(h=>u.href.startsWith(h)))return true;if(u.hostname==='raw.githubusercontent.com'&&u.pathname.includes('/ztman000-bot/btc/main/data/'))return true;if(u.origin===location.origin&&/\/data\//.test(u.pathname))return true;return false}catch(e){return false}}
+function timeoutNative(input,init={},ms=4500){const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms);const opts={...init,cache:init.cache||'no-store',signal:ctl.signal};return NATIVE_FETCH(input,opts).finally(()=>clearTimeout(t))}
+async function managedFetch(input,init={}){const method=String(init.method||((typeof input!=='string'&&input.method)||'GET')).toUpperCase();if(method!=='GET'||!isManaged(input))return NATIVE_FETCH(input,init);const url=typeof input==='string'?input:input.url;let firstErr=null;for(let attempt=0;attempt<2;attempt++){const started=Date.now();try{if(attempt){STATE.retries++;await new Promise(r=>setTimeout(r,180+Math.random()*120))}const r=await timeoutNative(input,{...init,cache:'no-store'},attempt?5500:4200);const ms=Date.now()-started;if(!r.ok&&r.status>=500)throw new Error('HTTP '+r.status);mark(url,true,ms);return r}catch(e){firstErr=firstErr||e;mark(url,false,Date.now()-started,e?.name==='AbortError'?'timeout':String(e?.message||e));if(navigator.onLine===false)break}}throw firstErr||new Error('network failed')}
+async function json(urls,{timeout=4500,key='',preferFastest=true}={}){const list=(Array.isArray(urls)?urls:[urls]).filter(Boolean);const normalized=key||list.join('|');if(INFLIGHT.has(normalized))return INFLIGHT.get(normalized);const work=(async()=>{const ordered=[...list].sort((a,b)=>{const ha=(()=>{try{return new URL(a,location.href).host}catch(e){return''}})(),hb=(()=>{try{return new URL(b,location.href).host}catch(e){return''}})();const A=HOST_SCORE.get(ha),B=HOST_SCORE.get(hb);return (A?.avgMs||99999)-(B?.avgMs||99999)});const tasks=ordered.map(async u=>{const started=Date.now();const r=await timeoutNative(u,{cache:'no-store'},timeout);if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json();mark(u,true,Date.now()-started);return{data,url:u,latency:Date.now()-started}});if(preferFastest){try{return await Promise.any(tasks)}catch(group){const errs=group?.errors||[];throw new Error(errs.map(e=>e?.message||String(e)).join(' / ')||'all routes failed')}}let last;for(const t of tasks){try{return await t}catch(e){last=e}}throw last||new Error('all routes failed')})();INFLIGHT.set(normalized,work);try{return await work}finally{INFLIGHT.delete(normalized)}}
+function dataMirrors(path){const clean=String(path||'').replace(/^\.\//,'').replace(/^\//,'');return[`./${clean}?nm=${Date.now()}`,`https://raw.githubusercontent.com/ztman000-bot/btc/main/${clean}?nm=${Date.now()}`]}
+async function fetchCrypto(host,path){const r=await timeoutNative(host+path,{cache:'no-store',mode:'cors'},3600);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function fastCryptoFetchJson(path,trace,label='market'){const started=Date.now();const ranked=[...BINANCE_HOSTS].sort((a,b)=>(HOST_SCORE.get(new URL(a).host)?.avgMs||99999)-(HOST_SCORE.get(new URL(b).host)?.avgMs||99999));const attempts=ranked.map(host=>fetchCrypto(host,path).then(data=>({host,data})).catch(error=>Promise.reject({host,error})));try{const win=await Promise.any(attempts);const ms=Date.now()-started;mark(win.host,true,ms);trace?.push(`✓ ${label}: ${win.host.replace('https://','')} · ${ms}ms`);return win.data}catch(group){const errs=group?.errors||[];errs.forEach(x=>trace?.push(`× ${label}: ${(x?.host||'unknown').replace('https://','')} · ${x?.error?.name==='AbortError'?'timeout':(x?.error?.message||'failed')}`));throw new Error(`${label} 전체 경로 실패 · ${Date.now()-started}ms`)}}
+function status(){return{...STATE,version:VERSION,online:navigator.onLine!==false,hosts:Object.fromEntries(HOST_SCORE)}}
+function install(){window.fetch=managedFetch;window.cryptoFetchJson=fastCryptoFetchJson;window.BTCNetwork={version:VERSION,fetch:managedFetch,json,dataMirrors,status,nativeFetch:NATIVE_FETCH,binanceHosts:[...BINANCE_HOSTS]};window.BTCScannerNetworkFix={version:VERSION,hosts:[...BINANCE_HOSTS],fetchJson:fastCryptoFetchJson};document.documentElement.dataset.scannerNetworkFix=VERSION;document.documentElement.dataset.networkManager=VERSION;window.addEventListener('online',()=>{STATE.online=true;STATE.lastError='';emit()});window.addEventListener('offline',()=>{STATE.online=false;STATE.lastError='offline';emit()});emit();document.dispatchEvent(new CustomEvent('btc-scanner-network-fix-ready',{detail:{version:VERSION}}));document.dispatchEvent(new CustomEvent('btc-network-ready',{detail:{version:VERSION}}))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
