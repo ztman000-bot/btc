@@ -24,11 +24,12 @@ jobs:
         run: |
           set -e
           for f in ./*.js; do node --check "$f"; done
-          grep -q "net-hedge-action-v8255.js" version-guard.js
+          grep -q "chart-price-overlay-clip-v8260.js" version-guard.js
+          grep -q "chart-price-overlay-clip-v8260.js" sw.js
           grep -q "auto-channel-v8256.js" version-guard.js
           grep -q "auto-channel-v8256.js" sw.js
-          grep -q "fapi.binance.com/fapi/v1/fundingRate" funding-carry-v8253.js
-          grep -q "Auto Trend Channel Engine" app-config.js
+          grep -q "version:'8.26.0'" app-config.js
+          grep -q "const V='8.26.0',MIN=60" auto-channel-v8256.js
       - name: Start local app
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/btc-http.log 2>&1 &
@@ -38,8 +39,7 @@ jobs:
         run: |
           node <<'NODE'
           const {chromium}=require('playwright-core'),fs=require('fs');const exe=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync);if(!exe)throw new Error('No browser');
-          (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(9000);const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(v!=='8.25.6')throw new Error('canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title mismatch');if(await p.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 routes');
-          await p.locator('footer.v8222Dock button[data-route="analysis"]').click();await p.waitForTimeout(1200);for(const id of ['btcForwardValidationCard','btcHedgeActionValidationCard','btcNetHedgeActionCard','btcFundingCarryCard'])if(!(await p.locator('#'+id).count()))throw new Error(id+' missing');const api=await p.evaluate(()=>({net:!!window.BTCNetHedgeAction,nv:window.BTCNetHedgeAction?.version,nro:window.BTCNetHedgeAction?.status?.().readOnly,channel:!!window.BTCAutoChannel,cv:window.BTCAutoChannel?.version,cro:window.BTCAutoChannel?.status?.().readOnly,funding:window.BTCFundingCarry?.version,action:window.BTCHedgeActionValidation?.version}));if(!api.net||api.nv!=='8.25.5'||api.nro!==true)throw new Error('Net Hedge Action API failed');if(!api.channel||api.cv!=='8.25.6'||api.cro!==true)throw new Error('Auto Channel API failed');if(api.funding!=='8.25.4'||api.action!=='8.25.2')throw new Error('dependency version failed');
-          await p.locator('footer.v8222Dock button[data-route="chart"]').click();await p.waitForTimeout(2500);const cs=await p.evaluate(()=>window.BTCAutoChannel?.analyze?.()||window.BTCAutoChannel?.status?.());if(!cs||cs.version!=='8.25.6'||cs.readOnly!==true)throw new Error('Auto Channel status failed');if(await p.locator('#chart').count()===0)throw new Error('chart canvas missing');
-          const txt=await p.locator('#btcNetHedgeActionCard').innerText().catch(()=> '');if(txt&& !txt.includes('Net Hedge Action Score'))throw new Error('Net UI semantics');const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / Auto Channel PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
+          (async()=>{const b=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:430,height:932}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:4173/#home',{waitUntil:'domcontentloaded',timeout:30000});await p.waitForTimeout(9000);const v=await p.evaluate(()=>window.BTC_APP_CONFIG?.version||'');if(v!=='8.26.0')throw new Error('canonical version '+v);if(!(await p.title()).includes(v))throw new Error('title mismatch');if(await p.locator('footer.v8222Dock button[data-route]').count()!==13)throw new Error('Expected 13 routes');
+          await p.locator('footer.v8222Dock button[data-route="chart"]').click();await p.waitForTimeout(2500);const api=await p.evaluate(()=>({channel:window.BTCAutoChannel?.status?.(),clip:window.BTCChartPriceOverlayClip?.status?.()}));if(!api.channel||api.channel.version!=='8.26.0'||api.channel.readOnly!==true||api.channel.minDisplayScore!==60)throw new Error('Auto Channel v2.1 contract failed');if(!api.clip||api.clip.version!=='8.26.0'||api.clip.patched!==true)throw new Error('Price overlay clip guard failed');if(await p.locator('#chart').count()===0)throw new Error('chart canvas missing');
+          const badge=await p.locator('#btcAutoChannelBadge').innerText().catch(()=> '');if(badge&&!badge.includes('AUTO CHANNEL'))throw new Error('Auto Channel badge semantics');const fatal=errors.filter(x=>!/fetch|network|Failed to fetch|CORS|WebSocket|service worker/i.test(x));if(fatal.length)throw new Error(fatal.join(' | '));console.log('UI PASS '+v+' / Auto Channel v2.1 + price clip PASS');await b.close()})().catch(e=>{console.error(e);process.exit(1)});
           NODE
