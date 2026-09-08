@@ -1,26 +1,26 @@
 {
   "schemaVersion": "1.1",
   "engineVersion": "8.20.0",
-  "generatedAt": "2026-09-08T12:00:17.570249+00:00",
-  "source": "Kraken 4H OHLC + Deribit BTC-PERPETUAL public API; no account keys; no real orders",
+  "generatedAt": "2026-09-08T12:04:02.473902+00:00",
+  "source": "Binance Futures public API; no account keys; no real orders",
   "market": {
-    "price": 78387.3,
-    "atr4hPct": 0.007971954640611376,
+    "price": 78230.6,
+    "atr4hPct": 0.00848087942204568,
     "regimeScore": 36,
-    "bars4h": 721,
+    "bars4h": 1000,
     "evidenceBarTime": 1788854400000,
-    "evidencePrice": 78402.1
+    "evidencePrice": 78400.0
   },
   "marketStructure": {
     "healthy": true,
-    "funding": 1.73e-05,
-    "mark": 78399.29,
-    "index": 78381.82,
-    "basis": 0.00022288331656481836,
-    "openInterest": 852102200.0,
-    "oiChange": 7851.088523448929,
-    "heat": 29,
-    "bias": -0.05648272194274698
+    "funding": 9.686e-05,
+    "mark": 78232.00128986,
+    "index": 78261.725,
+    "basis": -0.00037979881148811427,
+    "openInterest": 108567.846,
+    "oiChange": -0.9998725882341344,
+    "heat": 38,
+    "bias": 0.04083238019146857
   },
   "optimizer": {
     "ok": true,
@@ -32,11 +32,11 @@
       "dead": 0,
       "confirm": 1,
       "name": "E8/36 d0.00 c1",
-      "score": -0.011046279227293104,
-      "avg": 0.036582119614046484,
-      "median": 0.014322025278904582,
-      "worst": -0.028371999694251193,
-      "mdd": 0.03127301457135314,
+      "score": -0.009829633935138266,
+      "avg": 0.03683881523105853,
+      "median": 0.015137560721672938,
+      "worst": -0.027718577455205895,
+      "mdd": 0.031108669211718756,
       "turn": 3.6666666666666665,
       "folds": 6
     },
@@ -46,11 +46,11 @@
       "dead": 0.0015,
       "confirm": 2,
       "name": "BASE",
-      "score": -0.033016354285345946,
-      "avg": 0.02414358733794364,
-      "median": -6.609318939115871e-05,
-      "worst": -0.02855078071703543,
-      "mdd": 0.036884616464788376,
+      "score": -0.03394314166361419,
+      "avg": 0.024016823165616635,
+      "median": -0.0010049052355795562,
+      "worst": -0.028001069404939738,
+      "mdd": 0.036974656131220945,
       "turn": 1.3333333333333333,
       "folds": 6
     },
@@ -62,26 +62,12 @@
         "dead": 0,
         "confirm": 1,
         "name": "E8/36 d0.00 c1",
-        "score": -0.011046279227293104,
-        "avg": 0.036582119614046484,
-        "median": 0.014322025278904582,
-        "worst": -0.028371999694251193,
-        "mdd": 0.03127301457135314,
+        "score": -0.009829633935138266,
+        "avg": 0.03683881523105853,
+        "median": 0.015137560721672938,
+        "worst": -0.027718577455205895,
+        "mdd": 0.031108669211718756,
         "turn": 3.6666666666666665,
-        "folds": 6
-      },
-      {
-        "fast": 8,
-        "slow": 48,
-        "dead": 0.003,
-        "confirm": 1,
-        "name": "E8/48 d0.30 c1",
-        "score": -0.015845905182423323,
-        "avg": 0.030602803549053165,
-        "median": 0.014472347446397693,
-        "worst": -0.037898994589774415,
-        "mdd": 0.03387535395208817,
-        "turn": 1.3333333333333333,
         "folds": 6
       },
       {
@@ -90,12 +76,26 @@
         "dead": 0.0015,
         "confirm": 1,
         "name": "E8/36 d0.15 c1",
-        "score": -0.01708315023347133,
-        "avg": 0.031274322680082824,
-        "median": 0.007921306071910161,
-        "worst": -0.023224858122817937,
-        "mdd": 0.03082694968078444,
+        "score": -0.016971598071570993,
+        "avg": 0.03152611952028026,
+        "median": 0.00770005786596184,
+        "worst": -0.02237027012359305,
+        "mdd": 0.030792478043036288,
         "turn": 3,
+        "folds": 6
+      },
+      {
+        "fast": 8,
+        "slow": 48,
+        "dead": 0.003,
+        "confirm": 1,
+        "name": "E8/48 d0.30 c1",
+        "score": -0.01721680282035325,
+        "avg": 0.029910347415198935,
+        "median": 0.013754834397199045,
+        "worst": -0.03762414096736688,
+        "mdd": 0.034408396560403925,
+        "turn": 1.3333333333333333,
         "folds": 6
       },
       {
@@ -104,11 +104,11 @@
         "dead": 0.0015,
         "confirm": 1,
         "name": "E12/36 d0.15 c1",
-        "score": -0.01764273910333024,
-        "avg": 0.02822395493112047,
-        "median": 0.014472347446397693,
-        "worst": -0.037898994589774415,
-        "mdd": 0.034057839401677586,
+        "score": -0.017456034463296393,
+        "avg": 0.028234140553157483,
+        "median": 0.014272439860329666,
+        "worst": -0.03762414096736688,
+        "mdd": 0.033708579565247546,
         "turn": 2.3333333333333335,
         "folds": 6
       },
@@ -118,110 +118,110 @@
         "dead": 0.0015,
         "confirm": 1,
         "name": "E12/48 d0.15 c1",
-        "score": -0.018863723310585216,
-        "avg": 0.028524603554502443,
-        "median": 0.013743517748744716,
-        "worst": -0.04040848217380277,
-        "mdd": 0.03491340565920936,
+        "score": -0.019024744368614795,
+        "avg": 0.02816199149460989,
+        "median": 0.013827796670359271,
+        "worst": -0.040109333556320625,
+        "mdd": 0.035128042229267444,
         "turn": 1.3333333333333333,
         "folds": 6
       }
     ]
   },
   "executionReality": {
-    "oneWayCost": 0.0007594390928122275
+    "oneWayCost": 0.0007696175884409136
   },
   "monteCarlo": {
     "paths": 3000,
     "steps": 42,
-    "terminalPriceP10": 74156.09366707414,
-    "terminalPriceMedian": 79035.75377843053,
-    "terminalPriceP90": 84792.10576444388
+    "terminalPriceP10": 73897.33406426966,
+    "terminalPriceMedian": 78826.25920817633,
+    "terminalPriceP90": 84286.94810533246
   },
   "terminalWallet": {
     "rankedActions": [
       {
         "id": "EXIT_ALL",
         "valid": true,
-        "expectedWallet": 3616.7889230000146,
-        "p10": 3616.7889230000146,
-        "worst": 3616.7889230000146,
+        "expectedWallet": 3621.813270285711,
+        "p10": 3621.813270285711,
+        "worst": 3621.813270285711,
         "recoveryProbability": 0.0,
         "guardDistance": null,
-        "utility": 4501.8255999000185
+        "utility": 4508.357251371424
       },
       {
         "id": "SHORT_0.050",
         "valid": true,
-        "expectedWallet": 3614.2030211467145,
-        "p10": 3596.8462774945033,
-        "worst": 3554.855381229882,
+        "expectedWallet": 3619.265553471143,
+        "p10": 3602.702874989014,
+        "worst": 3539.568552929465,
         "recoveryProbability": 0.0,
-        "guardDistance": 43541.61518297844,
-        "utility": 4489.057814768603
+        "guardDistance": 43314.50711170154,
+        "utility": 4493.762983761892
       },
       {
         "id": "SHORT_0.025",
         "valid": true,
-        "expectedWallet": 3593.5277491360903,
-        "p10": 3436.714549643653,
-        "worst": 3057.3388484893017,
+        "expectedWallet": 3599.639024411426,
+        "p10": 3451.7899480896244,
+        "worst": 2888.212552634843,
         "recoveryProbability": 0.0,
-        "guardDistance": 35727.06536045566,
-        "utility": 4386.604543913751
+        "guardDistance": 35541.784429037245,
+        "utility": 4378.818269292835
       },
       {
         "id": "HOLD",
         "valid": true,
-        "expectedWallet": 3572.852477125466,
-        "p10": 3276.582821792802,
-        "worst": 2559.822315748722,
+        "expectedWallet": 3580.0124953517093,
+        "p10": 3300.8770211902342,
+        "worst": 2236.8565523402353,
         "recoveryProbability": 0.0,
-        "guardDistance": 30387.30000000006,
-        "utility": 4284.151273058899
+        "guardDistance": 30230.600000000064,
+        "utility": 4263.873554823779
       },
       {
         "id": "LONG_0.025",
         "valid": true,
-        "expectedWallet": 3552.208740503299,
-        "p10": 3116.694296935932,
-        "worst": 2063.0610701028954,
+        "expectedWallet": 3560.4170360092435,
+        "p10": 3150.1971478920323,
+        "worst": 1586.503536403625,
         "recoveryProbability": 0.0,
-        "guardDistance": 26147.453900430577,
-        "utility": 4181.853706900775
+        "guardDistance": 26011.852933376256,
+        "utility": 4149.106819228013
       },
       {
         "id": "LONG_0.050",
         "valid": true,
-        "expectedWallet": 3531.56500388112,
-        "p10": 2956.8057720790325,
-        "worst": 1566.2998244570547,
+        "expectedWallet": 3540.82157666678,
+        "p10": 2999.5172745938153,
+        "worst": 936.1505204670146,
         "recoveryProbability": 0.0,
-        "guardDistance": 22886.09203887781,
-        "utility": 4079.556140742632
+        "guardDistance": 22766.720807466823,
+        "utility": 4034.3400836322444
       }
     ],
     "modelBest": {
       "id": "EXIT_ALL",
       "valid": true,
-      "expectedWallet": 3616.7889230000146,
-      "p10": 3616.7889230000146,
-      "worst": 3616.7889230000146,
+      "expectedWallet": 3621.813270285711,
+      "p10": 3621.813270285711,
+      "worst": 3621.813270285711,
       "recoveryProbability": 0.0,
       "guardDistance": null,
-      "utility": 4501.8255999000185
+      "utility": 4508.357251371424
     },
     "executable": {
       "id": "HOLD",
       "valid": true,
-      "expectedWallet": 3572.852477125466,
-      "p10": 3276.582821792802,
-      "worst": 2559.822315748722,
+      "expectedWallet": 3580.0124953517093,
+      "p10": 3300.8770211902342,
+      "worst": 2236.8565523402353,
       "recoveryProbability": 0.0,
-      "guardDistance": 30387.30000000006,
-      "utility": 4284.151273058899
+      "guardDistance": 30230.600000000064,
+      "utility": 4263.873554823779
     },
-    "currentNetClose": 3616.9923380435043,
+    "currentNetClose": 3622.949882673124,
     "targetWallet": 69936.3
   },
   "shadow": {
@@ -233,26 +233,19 @@
     "evidenceBarTime": 1788854400000
   },
   "lastDecision": {
-    "at": "2026-09-08T12:00:17.570249+00:00",
-    "price": 78387.3,
+    "at": "2026-09-08T12:04:02.473902+00:00",
+    "price": 78230.6,
     "evidenceBarTime": 1788854400000,
-    "evidencePrice": 78402.1,
-    "newEvidence": true,
+    "evidencePrice": 78400.0,
+    "newEvidence": false,
     "regimeScore": 36,
     "champion": "E8/36 d0.00 c1",
     "governanceApproved": true,
     "modelBest": "EXIT_ALL",
     "executable": "HOLD",
-    "expectedWallet": 3572.852477125466,
+    "expectedWallet": 3580.0124953517093,
     "recoveryProbability": 0.0,
-    "forwardFromPrior": {
-      "since": "2026-09-08T08:01:45.324069+00:00",
-      "priceReturn": -0.000546879979603454,
-      "priorAction": "HOLD",
-      "directionalScore": -0.0,
-      "fromEvidenceBarTime": 1788840000000,
-      "toEvidenceBarTime": 1788854400000
-    }
+    "forwardFromPrior": null
   },
   "shadow2": {
     "activeEvaluations": 0,
@@ -277,10 +270,10 @@
         "slow": 50,
         "dead": 0.0015,
         "confirm": 2,
-        "score": 0.05564390976527174,
-        "ret": 0.11322258611234615,
-        "mdd": 0.040811759068821875,
-        "avg": 0.003045057658055441,
+        "score": 0.05563051034558089,
+        "ret": 0.11321122239178116,
+        "mdd": 0.040811759068822034,
+        "avg": 0.0030447749220657554,
         "median": 0.0028019699180471536,
         "worstBar": -0.022148485594681078,
         "p10Bar": -0.012281415632381942,
@@ -290,7 +283,7 @@
         "status": "SHADOW",
         "approved": true,
         "candidate": "BASE",
-        "baseScore": 0.05564390976527174,
+        "baseScore": 0.05563051034558089,
         "sample": 36
       },
       "UP": {
@@ -299,10 +292,10 @@
         "slow": 48,
         "dead": 0.003,
         "confirm": 1,
-        "score": -0.07746878910205969,
-        "ret": 0.09034368941041593,
-        "mdd": 0.05562398332373177,
-        "avg": 0.0004693607710483944,
+        "score": -0.07758669781015556,
+        "ret": 0.0902441019944511,
+        "mdd": 0.055623983323731085,
+        "avg": 0.0004688957636338859,
         "median": 7.856548664375573e-05,
         "worstBar": -0.022122109172266313,
         "p10Bar": -0.00678299020642692,
@@ -312,7 +305,7 @@
         "status": "SHADOW",
         "approved": true,
         "candidate": "E8/48 d0.30 c1",
-        "baseScore": -0.15440307997630204,
+        "baseScore": -0.15462541988251696,
         "sample": 197
       },
       "RANGE": {
@@ -321,10 +314,10 @@
         "slow": 96,
         "dead": 0.0015,
         "confirm": 2,
-        "score": -0.06954979424578171,
-        "ret": 0.08527361686576174,
-        "mdd": 0.044970344038297555,
-        "avg": 0.0005485788952916624,
+        "score": -0.07202577392294128,
+        "ret": 0.08321084638831966,
+        "mdd": 0.04500939495358712,
+        "avg": 0.0005363988978005935,
         "median": 0.0001560845509111508,
         "worstBar": -0.020366846310475806,
         "p10Bar": -0.007994505141800667,
@@ -334,7 +327,7 @@
         "status": "ACTIVE",
         "approved": true,
         "candidate": "E8/96 d0.15 c2",
-        "baseScore": -0.17023246372468337,
+        "baseScore": -0.1725772216374808,
         "sample": 156
       },
       "DOWN": {
@@ -343,10 +336,10 @@
         "slow": 36,
         "dead": 0.003,
         "confirm": 2,
-        "score": -0.11032208175443056,
-        "ret": 0.034312713970794384,
-        "mdd": 0.05628014706020807,
-        "avg": 0.000314953731672357,
+        "score": -0.11052564225876617,
+        "ret": 0.03419691931643065,
+        "mdd": 0.05635705665972428,
+        "avg": 0.00031402070290639415,
         "median": 5.06239590536417e-05,
         "worstBar": -0.026499002486950474,
         "p10Bar": -0.00814629669034872,
@@ -356,7 +349,7 @@
         "status": "SHADOW",
         "approved": true,
         "candidate": "E20/36 d0.30 c2",
-        "baseScore": -0.1839089140436674,
+        "baseScore": -0.18410614386309201,
         "sample": 120
       },
       "CRASH_DOWN": {
@@ -378,21 +371,21 @@
   "guard2": {
     "hardFloorUsd": 10000.0,
     "dynamicOperatingGuardUsd": 12000,
-    "atr4hPct": 0.007971954640611376,
+    "atr4hPct": 0.00848087942204568,
     "optimizerMayOverrideHardFloor": false,
     "source": "ATR 4H + absolute hard floor"
   },
   "recovery2": {
     "objective": "terminal_wallet_recovery",
     "targetWallet": 69936.3,
-    "currentNetClose": 3616.9923380435043,
-    "progress": 0.0517183828432946,
-    "expectedWallet": 3572.852477125466,
-    "p10Wallet": 3276.582821792802,
-    "worstWallet": 2559.822315748722,
+    "currentNetClose": 3622.949882673124,
+    "progress": 0.05180356814233987,
+    "expectedWallet": 3580.0124953517093,
+    "p10Wallet": 3300.8770211902342,
+    "worstWallet": 2236.8565523402353,
     "recoveryProbability": 0.0,
-    "downsideToWorst": 1057.1700222947825,
-    "recoveryUtility": 4405.962022132801,
+    "downsideToWorst": 1386.0933303328889,
+    "recoveryUtility": 4255.627567883792,
     "priority": [
       "10K hard guard",
       "survival/worst wallet",
@@ -403,12 +396,12 @@
   },
   "governance2": {
     "champion": "E8/96 d0.15 c2",
-    "challenger": "E8/48 d0.30 c1",
-    "scoreMargin": 0.00479962595513022,
+    "challenger": "E8/36 d0.15 c1",
+    "scoreMargin": 0.007141964136432727,
     "promotionEligible": false,
     "forwardMinimum": 30,
     "independentConfirmed4hEvidence": true,
     "reason": "Independent active-action closed-4H sample >=30 required before automatic promotion."
   },
-  "enhancedAt": "2026-09-08T12:00:18.350179+00:00"
+  "enhancedAt": "2026-09-08T12:04:03.324095+00:00"
 }
