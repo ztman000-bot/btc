@@ -1,0 +1,30 @@
+/* BTC Hedge Assistant - External Historical Dataset Layer v1.0.0 */
+(()=>{'use strict';
+if(window.__BTC_EXTERNAL_HIST_DATA_8272__)return;window.__BTC_EXTERNAL_HIST_DATA_8272__=true;
+const V='1.0.0',KEY='btc:external-historical-validation:v1',REG='./data/external/source-registry.json',FOUR=4*3600000,MAX=6000;
+const WINDOWS=[
+  ['2021_MAY',Date.UTC(2021,4,1),Date.UTC(2021,6,31)],
+  ['2021_NOV_2022',Date.UTC(2021,10,1),Date.UTC(2022,1,28)],
+  ['2022_LUNA',Date.UTC(2022,3,1),Date.UTC(2022,6,31)],
+  ['2022_FTX',Date.UTC(2022,9,1),Date.UTC(2023,0,31)],
+  ['2024_2026',Date.UTC(2024,2,1),Date.UTC(2026,8,1)]
+];
+const N=v=>Number.isFinite(+v)?+v:null,$=id=>document.getElementById(id);
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+function save(x){try{localStorage.setItem(KEY,JSON.stringify(x))}catch(e){}}
+async function j(url){const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(String(r.status));return r.json()}
+async function registry(){try{return await j(REG)}catch(e){return null}}
+function normalize(rows,windowName){return (Array.isArray(rows)?rows:[]).map(x=>({t:N(x[0]),o:N(x[1]),h:N(x[2]),l:N(x[3]),c:N(x[4]),v:N(x[5]),ct:N(x[6]),window:windowName,sourceId:'binance-public-data'})).filter(x=>x.t&&x.ct&&x.c>0)}
+function quality(a){if(!a.length)return{ok:false,records:0,gaps:0,duplicates:0,monotonic:false};let gaps=0,dup=0,mono=true;for(let i=1;i<a.length;i++){const d=a[i].t-a[i-1].t;if(d<=0){mono=false;if(d===0)dup++}if(d>FOUR*1.5)gaps++}return{ok:mono&&dup===0,records:a.length,gaps,duplicates:dup,monotonic:mono}}
+function regimeAt(a,i){if(i<12)return'WARMUP';const p=a[i].c,p12=a[i-12].c,p6=a[i-6].c;if(!p12||!p6)return'UNKNOWN';const r12=p/p12-1,r6=p/p6-1;if(r12<=-.08)return'CRASH_DOWN';if(r12<=-.035||r6<=-.025)return'DOWN';if(r12>=.08)return'STRONG_UP';if(r12>=.035||r6>=.025)return'UP';return'RANGE'}
+function classify(a){const c={STRONG_UP:0,UP:0,RANGE:0,DOWN:0,CRASH_DOWN:0,WARMUP:0,UNKNOWN:0};for(let i=0;i<a.length;i++)c[regimeAt(a,i)]=(c[regimeAt(a,i)]||0)+1;return c}
+async function bars(name,a,b){let out=[],s=a;while(s<b&&out.length<MAX){const u=`https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=4h&startTime=${s}&endTime=${b}&limit=1500`;let x;try{x=await j(u)}catch(e){break}if(!Array.isArray(x)||!x.length)break;const n=normalize(x,name);out.push(...n);const last=n.at(-1);if(!last)break;s=last.t+FOUR;if(x.length<1500)break}return out.slice(0,MAX)}
+function summaryFrom(records,reg,sourceStatus){const q=quality(records),regimes=classify(records),windows={};for(const r of records)windows[r.window]=(windows[r.window]||0)+1;return{version:V,at:Date.now(),sourceRegistry:reg?.schema||null,sourceStatus,quality:q,records:q.records,regimes,windows,readOnly:true,affectsSafety:false,affectsOrders:false,role:'EXTERNAL_HISTORICAL_OOS_SUPPORT_ONLY',liveForwardEvidenceSeparate:true}}
+async function refresh(force=false){const old=load();if(!force&&old?.at&&Date.now()-old.at<24*3600000)return old;const reg=await registry(),trusted=reg?.sources?.filter(x=>x.tier==='A'&&x.ownerType==='official')||[];if(!trusted.length){const s=summaryFrom([],reg,{trustedSources:0,error:'NO_TRUSTED_SOURCE'});save(s);render(s);return s}let all=[];for(const [name,a,b] of WINDOWS){const x=await bars(name,a,b);all.push(...x)}all=all.sort((x,y)=>x.t-y.t);const seen=new Set();all=all.filter(x=>{const k=x.t+'|'+x.window;if(seen.has(k))return false;seen.add(k);return true}).slice(-MAX);const s=summaryFrom(all,reg,{trustedSources:trusted.length,primary:'binance-public-data'});s.sample=all.slice(-120);save(s);window.__BTC_EXTERNAL_HIST_SUMMARY=s;document.dispatchEvent(new CustomEvent('btc-external-historical-ready',{detail:s}));render(s);return s}
+function status(){return window.__BTC_EXTERNAL_HIST_SUMMARY||load()||{version:V,records:0,readOnly:true,role:'EXTERNAL_HISTORICAL_OOS_SUPPORT_ONLY'}}
+function style(){if($('btcExternalHistStyle'))return;const s=document.createElement('style');s.id='btcExternalHistStyle';s.textContent='#btcExternalHistoricalCard{border:1px solid #334c63;border-radius:14px;padding:12px;margin:10px 0;background:#0a1621}#btcExternalHistoricalCard .ehg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}#btcExternalHistoricalCard .ehk{border:1px solid #293e52;border-radius:9px;padding:8px}#btcExternalHistoricalCard .ehk span{display:block;font-size:9px;color:#8fa3b7}#btcExternalHistoricalCard .ehk b{font-size:14px}#btcExternalHistoricalCard .tiny{font-size:9px;color:#91a3b5;line-height:1.45;margin-top:7px}';document.head.appendChild(s)}
+function render(x=status()){style();const root=$('v8222TodayAnalysisPage')||$('v850HomePane');if(!root)return false;let c=$('btcExternalHistoricalCard');if(!c){c=document.createElement('div');c.id='btcExternalHistoricalCard';root.appendChild(c)}const r=x.regimes||{},q=x.quality||{};c.innerHTML=`<div class="row"><div><b>🗃 External Historical Dataset</b><div class="small">공개 축적데이터를 별도 OOS 보조층으로 검증</div></div><span class="badge">READ ONLY</span></div><div class="ehg"><div class="ehk"><span>정규화 4H</span><b>${x.records||0}</b></div><div class="ehk"><span>CRASH_DOWN</span><b>${r.CRASH_DOWN||0}</b></div><div class="ehk"><span>데이터 품질</span><b>${q.ok?'PASS':x.records?'WARN':'대기'}</b></div></div><div class="tiny">공식 Binance Public Data를 Tier A로 우선하며, 커뮤니티 GitHub 데이터는 출처·스키마 검증 전에는 참고용으로만 취급합니다. Live Forward 표본과 절대 합산하지 않으며 주문·Safety·Governance에 영향이 없습니다.</div>`;return true}
+function boot(){setTimeout(()=>refresh(false),4500);document.addEventListener('btc-bootstrap-ready',()=>setTimeout(()=>refresh(false),1800));document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()})}
+window.BTCExternalHistoricalDataset={version:V,key:KEY,refresh,status,render,registry};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
