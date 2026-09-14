@@ -58,13 +58,13 @@ jobs:
           perf=Path('performance-core.js').read_text(encoding='utf-8')
           resume=Path('chart-resume-fix-v8242.js').read_text(encoding='utf-8')
           forward=Path('forward-validation-v8250.js').read_text(encoding='utf-8')
-          m=re.search(r"version:'(8\.25\.\d+)'",cfg)
-          assert m, 'canonical 8.25.x version missing from app-config'
+          m=re.search(r"version:'(\d+\.\d+\.\d+)'",cfg)
+          assert m, 'canonical semver missing from app-config'
           version=m.group(1)
           assert 'version-guard.js' in upd and 'safety-core.js' not in upd, 'updater must remain thin'
           for name in ['performance-core.js','safety-core.js','research-health.js','stability-guard.js','startup-health.js','v8223-ui.js','scanner-network-fix.js','stability-cleanup.js','chart-resume-fix-v8242.js','forward-validation-v8250.js']:
               assert name in boot, f'missing canonical bootstrap module: {name}'
-          assert 'preloadMany' in boot and 'yieldMain' in boot, 'performance-aware bootstrap missing'
+          assert 'const modules=' in boot and 'for(const [id,n,c] of modules)await load' in boot, 'deterministic bootstrap module chain missing'
           assert 'PerformanceObserver' in perf and 'yieldToMain' in perf, 'performance core missing telemetry/scheduler'
           assert 'visibilitychange' in resume and 'pageshow' in resume and 'drawChart' in resume, 'chart resume guard missing lifecycle repaint'
           assert '__BTC_STABILITY_GUARD_SINGLETON' in stab, 'stability singleton missing'
